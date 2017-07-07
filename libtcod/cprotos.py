@@ -96,8 +96,8 @@ def setup_protos(lib):
     lib.TCOD_color_multiply_scalar .restype=Color
     lib.TCOD_color_multiply_scalar .argtypes=[Color , c_float ]
 
-#    lib.TCOD_color_lerp .restype=c_int
-#    lib.TCOD_color_lerp .argtypes=[c_int , c_int , c_float ]
+#    libtcod.TCOD_color_lerp .restype=c_int
+#    libtcod.TCOD_color_lerp .argtypes=[c_int , c_int , c_float ]
 
     lib.TCOD_color_set_HSV .restype=c_void
     lib.TCOD_color_set_HSV .argtypes=[POINTER(Color),c_float , c_float , c_float ]
@@ -198,20 +198,20 @@ def setup_protos(lib):
     lib.TCOD_console_get_alignment.restype=c_int
     lib.TCOD_console_get_alignment.argtypes=[c_void_p ]
 
-#    lib.TCOD_console_print.restype=c_void
-#    lib.TCOD_console_print.argtypes=[c_void_p ,c_int, c_int, c_char_p, ...]
+#    libtcod.TCOD_console_print.restype=c_void
+#    libtcod.TCOD_console_print.argtypes=[c_void_p ,c_int, c_int, c_char_p, ...]
 
-#    lib.TCOD_console_print_ex.restype=c_void
-#    lib.TCOD_console_print_ex.argtypes=[c_void_p ,c_int, c_int, c_int , c_int , c_char_p, ...]
+#    libtcod.TCOD_console_print_ex.restype=c_void
+#    libtcod.TCOD_console_print_ex.argtypes=[c_void_p ,c_int, c_int, c_int , c_int , c_char_p, ...]
 
-#    lib.TCOD_console_print_rect.restype=c_int
-#    lib.TCOD_console_print_rect.argtypes=[c_void_p ,c_int, c_int, c_int, c_int, c_char_p, ...]
+#    libtcod.TCOD_console_print_rect.restype=c_int
+#    libtcod.TCOD_console_print_rect.argtypes=[c_void_p ,c_int, c_int, c_int, c_int, c_char_p, ...]
 
-#    lib.TCOD_console_print_rect_ex.restype=c_int
-#    lib.TCOD_console_print_rect_ex.argtypes=[c_void_p ,c_int, c_int, c_int, c_int, c_int , c_int , c_char_p, ...]
+#    libtcod.TCOD_console_print_rect_ex.restype=c_int
+#    libtcod.TCOD_console_print_rect_ex.argtypes=[c_void_p ,c_int, c_int, c_int, c_int, c_int , c_int , c_char_p, ...]
 
-#    lib.TCOD_console_get_height_rect.restype=c_int
-#    lib.TCOD_console_get_height_rect.argtypes=[c_void_p ,c_int, c_int, c_int, c_int, c_char_p, ...]
+#    libtcod.TCOD_console_get_height_rect.restype=c_int
+#    libtcod.TCOD_console_get_height_rect.argtypes=[c_void_p ,c_int, c_int, c_int, c_int, c_char_p, ...]
 
     lib.TCOD_console_rect.restype=c_void
     lib.TCOD_console_rect.argtypes=[c_void_p ,c_int, c_int, c_int, c_int, c_bool , c_int ]
@@ -222,26 +222,26 @@ def setup_protos(lib):
     lib.TCOD_console_vline.restype=c_void
     lib.TCOD_console_vline.argtypes=[c_void_p ,c_int,c_int, c_int, c_int ]
 
-#    lib.TCOD_console_print_frame.restype=c_void
-#    lib.TCOD_console_print_frame.argtypes=[c_void_p ,c_int,c_int,c_int,c_int, c_bool , c_int , c_char_p, ...]
+#    libtcod.TCOD_console_print_frame.restype=c_void
+#    libtcod.TCOD_console_print_frame.argtypes=[c_void_p ,c_int,c_int,c_int,c_int, c_bool , c_int , c_char_p, ...]
 
     lib.TCOD_console_map_string_to_font_utf.restype=c_void
     lib.TCOD_console_map_string_to_font_utf.argtypes=[c_char_p, c_int, c_int]
 
-#    lib.TCOD_console_print_utf.restype=c_void
-#    lib.TCOD_console_print_utf.argtypes=[c_void_p ,c_int, c_int, wchar_t_p, ...]
+#    libtcod.TCOD_console_print_utf.restype=c_void
+#    libtcod.TCOD_console_print_utf.argtypes=[c_void_p ,c_int, c_int, wchar_t_p, ...]
 
-#    lib.TCOD_console_print_ex_utf.restype=c_void
-#    lib.TCOD_console_print_ex_utf.argtypes=[c_void_p ,c_int, c_int, c_int , c_int , wchar_t_p, ...]
+#    libtcod.TCOD_console_print_ex_utf.restype=c_void
+#    libtcod.TCOD_console_print_ex_utf.argtypes=[c_void_p ,c_int, c_int, c_int , c_int , wchar_t_p, ...]
 
-#    lib.TCOD_console_print_rect_utf.restype=c_int
-#    lib.TCOD_console_print_rect_utf.argtypes=[c_void_p ,c_int, c_int, c_int, c_int, wchar_t_p, ...]
+#    libtcod.TCOD_console_print_rect_utf.restype=c_int
+#    libtcod.TCOD_console_print_rect_utf.argtypes=[c_void_p ,c_int, c_int, c_int, c_int, wchar_t_p, ...]
 
-#    lib.TCOD_console_print_rect_ex_utf.restype=c_int
-#    lib.TCOD_console_print_rect_ex_utf.argtypes=[c_void_p ,c_int, c_int, c_int, c_int, c_int , c_int , wchar_t_p, ...]
+#    libtcod.TCOD_console_print_rect_ex_utf.restype=c_int
+#    libtcod.TCOD_console_print_rect_ex_utf.argtypes=[c_void_p ,c_int, c_int, c_int, c_int, c_int , c_int , wchar_t_p, ...]
 
     lib.TCOD_console_get_height_rect_utf.restype=c_int
-#    lib.TCOD_console_get_height_rect_utf.argtypes=[c_void_p ,c_int, c_int, c_int, c_int, wchar_t_p, ...]
+#    libtcod.TCOD_console_get_height_rect_utf.argtypes=[c_void_p ,c_int, c_int, c_int, c_int, wchar_t_p, ...]
 
     lib.TCOD_console_get_default_background.restype=Color
     lib.TCOD_console_get_default_background.argtypes=[c_void_p ]
@@ -273,11 +273,11 @@ def setup_protos(lib):
     lib.TCOD_console_set_color_control.restype=c_void
     lib.TCOD_console_set_color_control.argtypes=[c_int , Color , Color ]
 
-#    lib.TCOD_console_check_for_keypress.restype=TCOD_key_t
-#    lib.TCOD_console_check_for_keypress.argtypes=[c_int]
+#    libtcod.TCOD_console_check_for_keypress.restype=TCOD_key_t
+#    libtcod.TCOD_console_check_for_keypress.argtypes=[c_int]
 
-#    lib.TCOD_console_wait_for_keypress.restype=TCOD_key_t
-#    lib.TCOD_console_wait_for_keypress.argtypes=[c_bool ]
+#    libtcod.TCOD_console_wait_for_keypress.restype=TCOD_key_t
+#    libtcod.TCOD_console_wait_for_keypress.argtypes=[c_bool ]
 
     lib.TCOD_console_set_keyboard_repeat.restype=c_void
     lib.TCOD_console_set_keyboard_repeat.argtypes=[c_int, c_int]
@@ -683,11 +683,11 @@ def setup_protos(lib):
     lib.TCOD_random_get_double_mean .restype=c_double
     lib.TCOD_random_get_double_mean .argtypes=[c_void_p , c_double , c_double , c_double ]
 
-#    lib.TCOD_random_dice_new .restype=TCOD_dice_t
-#    lib.TCOD_random_dice_new .argtypes=[c_char_p ]
+#    libtcod.TCOD_random_dice_new .restype=TCOD_dice_t
+#    libtcod.TCOD_random_dice_new .argtypes=[c_char_p ]
 
-#    lib.TCOD_random_dice_roll .restype=c_int
-#    lib.TCOD_random_dice_roll .argtypes=[c_void_p , TCOD_dice_t ]
+#    libtcod.TCOD_random_dice_roll .restype=c_int
+#    libtcod.TCOD_random_dice_roll .argtypes=[c_void_p , TCOD_dice_t ]
 
     lib.TCOD_random_dice_roll_s .restype=c_int
     lib.TCOD_random_dice_roll_s .argtypes=[c_void_p , c_char_p ]
@@ -695,8 +695,8 @@ def setup_protos(lib):
     lib.TCOD_mouse_show_cursor.restype=c_void
     lib.TCOD_mouse_show_cursor.argtypes=[c_bool ]
 
-#    lib.TCOD_mouse_get_status.restype=TCOD_mouse_t
-#    lib.TCOD_mouse_get_status.argtypes=[]
+#    libtcod.TCOD_mouse_get_status.restype=TCOD_mouse_t
+#    libtcod.TCOD_mouse_get_status.argtypes=[]
 
     lib.TCOD_mouse_is_cursor_visible.restype=c_bool
     lib.TCOD_mouse_is_cursor_visible.argtypes=[]
@@ -779,8 +779,8 @@ def setup_protos(lib):
     lib.TCOD_parser_new_struct.restype=c_void_p
     lib.TCOD_parser_new_struct.argtypes=[c_void_p , c_char_p]
 
-#    lib.TCOD_parser_new_custom_type.restype=c_int
-#    lib.TCOD_parser_new_custom_type.argtypes=[c_void_p ,TCOD_parser_custom_t custom_type_]
+#    libtcod.TCOD_parser_new_custom_type.restype=c_int
+#    libtcod.TCOD_parser_new_custom_type.argtypes=[c_void_p ,TCOD_parser_custom_t custom_type_]
 
     lib.TCOD_parser_run.restype=c_void
     lib.TCOD_parser_run.argtypes=[c_void_p , c_char_p, c_void_p]
@@ -789,7 +789,7 @@ def setup_protos(lib):
     lib.TCOD_parser_delete.argtypes=[c_void_p ]
 
     lib.TCOD_parser_error.restype=c_void
-#    lib.TCOD_parser_error.argtypes=[c_char_p, ...]
+#    libtcod.TCOD_parser_error.argtypes=[c_char_p, ...]
 
     lib.TCOD_parser_get_bool_property.restype=c_bool
     lib.TCOD_parser_get_bool_property.argtypes=[c_void_p , c_char_p]
@@ -809,11 +809,11 @@ def setup_protos(lib):
     lib.TCOD_parser_get_color_property.restype=c_int
     lib.TCOD_parser_get_color_property.argtypes=[c_void_p , c_char_p]
 
-#    lib.TCOD_parser_property.restype=TCOD_dice_t
-#    lib.TCOD_parser_property.argtypes=[c_void_p , c_char_p]
+#    libtcod.TCOD_parser_property.restype=TCOD_dice_t
+#    libtcod.TCOD_parser_property.argtypes=[c_void_p , c_char_p]
 
-#    lib.TCOD_parser_py.restype=c_void
-#    lib.TCOD_parser_py.argtypes=[c_void_p , c_char_p, c_void_p]
+#    libtcod.TCOD_parser_py.restype=c_void
+#    libtcod.TCOD_parser_py.argtypes=[c_void_p , c_char_p, c_void_p]
 
     lib.TCOD_parser_get_custom_property.restype=c_void_p
     lib.TCOD_parser_get_custom_property.argtypes=[c_void_p , c_char_p]
@@ -821,38 +821,38 @@ def setup_protos(lib):
     lib.TCOD_parser_get_list_property.restype=c_void_p
     lib.TCOD_parser_get_list_property.argtypes=[c_void_p , c_char_p, c_int ]
 
-#    lib.TCOD_parse_c_bool_value.restype=TCOD_value_t
-#    lib.TCOD_parse_c_bool_value.argtypes=[]
+#    libtcod.TCOD_parse_c_bool_value.restype=TCOD_value_t
+#    libtcod.TCOD_parse_c_bool_value.argtypes=[]
 
-#    lib.TCOD_parse_char_value.restype=TCOD_value_t
-#    lib.TCOD_parse_char_value.argtypes=[]
+#    libtcod.TCOD_parse_char_value.restype=TCOD_value_t
+#    libtcod.TCOD_parse_char_value.argtypes=[]
 
-#    lib.TCOD_parse_integer_value.restype=TCOD_value_t
-#    lib.TCOD_parse_integer_value.argtypes=[]
+#    libtcod.TCOD_parse_integer_value.restype=TCOD_value_t
+#    libtcod.TCOD_parse_integer_value.argtypes=[]
 
-#    lib.TCOD_parse_float_value.restype=TCOD_value_t
-#    lib.TCOD_parse_float_value.argtypes=[]
+#    libtcod.TCOD_parse_float_value.restype=TCOD_value_t
+#    libtcod.TCOD_parse_float_value.argtypes=[]
 
-#    lib.TCOD_parse_string_value.restype=TCOD_value_t
-#    lib.TCOD_parse_string_value.argtypes=[]
+#    libtcod.TCOD_parse_string_value.restype=TCOD_value_t
+#    libtcod.TCOD_parse_string_value.argtypes=[]
 
-#    lib.TCOD_parse_color_value.restype=TCOD_value_t
-#    lib.TCOD_parse_color_value.argtypes=[]
+#    libtcod.TCOD_parse_color_value.restype=TCOD_value_t
+#    libtcod.TCOD_parse_color_value.argtypes=[]
 
-#    lib.TCOD_parse_dice_value.restype=TCOD_value_t
-#    lib.TCOD_parse_dice_value.argtypes=[]
+#    libtcod.TCOD_parse_dice_value.restype=TCOD_value_t
+#    libtcod.TCOD_parse_dice_value.argtypes=[]
 
-#    lib.TCOD_parse_value_list_value.restype=TCOD_value_t
-#    lib.TCOD_parse_value_list_value.argtypes=[c_void_p,c_int]
+#    libtcod.TCOD_parse_value_list_value.restype=TCOD_value_t
+#    libtcod.TCOD_parse_value_list_value.argtypes=[c_void_p,c_int]
 
-#    lib.TCOD_parse_property_value.restype=TCOD_value_t
-#    lib.TCOD_parse_property_value.argtypes=[c_void_p, c_void_p , c_char_p, c_bool ]
+#    libtcod.TCOD_parse_property_value.restype=TCOD_value_t
+#    libtcod.TCOD_parse_property_value.argtypes=[c_void_p, c_void_p , c_char_p, c_bool ]
 
     lib.TCOD_path_new_using_map.restype=c_void_p
     lib.TCOD_path_new_using_map.argtypes=[c_void_p , c_float ]
 
-#    lib.TCOD_path_new_using_function.restype=c_void_p
-#    lib.TCOD_path_new_using_function.argtypes=[c_int, c_int, TCOD_path_func_t ,c_void_p, c_float ]
+#    libtcod.TCOD_path_new_using_function.restype=c_void_p
+#    libtcod.TCOD_path_new_using_function.argtypes=[c_int, c_int, TCOD_path_func_t ,c_void_p, c_float ]
 
     lib.TCOD_path_compute.restype=c_bool
     lib.TCOD_path_compute.argtypes=[c_void_p , c_int,c_int, c_int, c_int]
@@ -884,8 +884,8 @@ def setup_protos(lib):
     lib.TCOD_dijkstra_new .restype=c_void_p
     lib.TCOD_dijkstra_new .argtypes=[c_void_p , c_float ]
 
-#    lib.TCOD_dijkstra_new_using_function.restype=c_void_p
-#    lib.TCOD_dijkstra_new_using_function.argtypes=[c_int, c_int, TCOD_path_func_t ,c_void_p, c_float ]
+#    libtcod.TCOD_dijkstra_new_using_function.restype=c_void_p
+#    libtcod.TCOD_dijkstra_new_using_function.argtypes=[c_int, c_int, TCOD_path_func_t ,c_void_p, c_float ]
 
     lib.TCOD_dijkstra_compute .restype=c_void
     lib.TCOD_dijkstra_compute .argtypes=[c_void_p , c_int, c_int]
@@ -978,7 +978,7 @@ def setup_protos(lib):
     lib.TCOD_sys_get_directory_content.argtypes=[c_char_p, c_char_p]
 
     lib.TCOD_sys_file_exists.restype=c_bool
-#    lib.TCOD_sys_file_exists.argtypes=[c_char_p , ...]
+#    libtcod.TCOD_sys_file_exists.argtypes=[c_char_p , ...]
 
     lib.TCOD_sys_clipboard_set.restype=c_void
     lib.TCOD_sys_clipboard_set.argtypes=[c_char_p]
