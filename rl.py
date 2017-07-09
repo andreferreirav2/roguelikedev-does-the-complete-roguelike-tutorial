@@ -30,7 +30,7 @@ class Object(Drawable):
         self.color = color
 
     def move(self, dx, dy):
-        if not map.map[self.x + dx][self.y + dy].blocked:
+        if not tilemap.tiles[self.x + dx][self.y + dy].blocked:
             self.x += dx
             self.y += dy
 
@@ -40,7 +40,7 @@ class Object(Drawable):
         libtcod.console_put_char(con, self.x, self.y, self.char, libtcod.BKGND_NONE)
 
     def clear(self):
-        libtcod.console_put_char(con, self.x, self.y, ' ', libtcod.BKGND_NONE)
+        tilemap.tiles[self.x][self.y].draw()
 
 
 class Map(Drawable):
@@ -48,32 +48,37 @@ class Map(Drawable):
         Drawable.__init__(self)
         self.width = width
         self.height = height
-        self.map = [[Tile(False) for y in range(0, self.height)] for x in range(0, self.width)]
+        self.tiles = [[Tile(x, y, blocked=False) for y in range(0, self.height)] for x in range(0, self.width)]
 
         self.color_dark_wall = libtcod.Color(0, 0, 100)
         self.color_dark_ground = libtcod.Color(50, 50, 150)
 
-        self.map[20][30].blocked = True
-        self.map[20][30].block_sight = True
-        self.map[25][33].blocked = True
-        self.map[25][33].block_sight = True
+        self.tiles[20][30].blocked = True
+        self.tiles[20][30].block_sight = True
+        self.tiles[25][33].blocked = True
+        self.tiles[25][33].block_sight = True
 
     def draw(self):
         for x in range(self.width):
             for y in range(self.height):
-                if self.map[x][y].block_sight:
-                    libtcod.console_put_char_ex(con, x, y, '#', libtcod.white, libtcod.black)
-                else:
-                    libtcod.console_put_char_ex(con, x, y, '.', libtcod.white, libtcod.black)
+                self.tiles[x][y].draw()
 
 
-class Tile:
-    def __init__(self, blocked, block_sight=None):
+class Tile(Drawable):
+    def __init__(self, x, y, blocked, block_sight=None):
+        Drawable.__init__(self)
+        self.x = x
+        self.y = y
         self.blocked = blocked
-
         if block_sight is None:
             block_sight = blocked
         self.block_sight = block_sight
+
+    def draw(self):
+        if self.block_sight:
+            libtcod.console_put_char_ex(con, self.x, self.y, '#', libtcod.white, libtcod.black)
+        else:
+            libtcod.console_put_char_ex(con, self.x, self.y, '.', libtcod.white, libtcod.black)
 
 
 def render_all():
@@ -118,10 +123,12 @@ if __name__ == '__main__':
     libtcod.sys_set_fps(LIMIT_FPS)
     con = libtcod.console_new(SCREEN_WIDTH, SCREEN_HEIGHT)
 
+    tilemap = Map(MAP_WIDTH, MAP_HEIGHT)
+    tilemap.draw()
+
     player = Object(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, '@', libtcod.white)
     npc = Object(SCREEN_WIDTH / 2 + 5, SCREEN_HEIGHT / 2, '@', libtcod.yellow)
-    map = Map(MAP_WIDTH, MAP_HEIGHT)
-    objects = [map, player, npc]
+    objects = [player, npc]
 
     while not libtcod.console_is_window_closed():
         render_all()
