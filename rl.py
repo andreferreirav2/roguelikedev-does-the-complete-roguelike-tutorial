@@ -9,6 +9,7 @@ LIMIT_FPS = 20
 MAP_WIDTH = 80
 MAP_HEIGHT = 45
 
+tilemap = None
 
 class Drawable:
     def __init__(self):
@@ -30,38 +31,20 @@ class Object(Drawable):
         self.color = color
 
     def move(self, dx, dy):
+        global tilemap
         if not tilemap.tiles[self.x + dx][self.y + dy].blocked:
             self.x += dx
             self.y += dy
 
     def draw(self):
         # Draw the player
-        libtcod.console_set_default_foreground(0, self.color)
+        libtcod.console_set_default_foreground(con, self.color)
         libtcod.console_put_char(con, self.x, self.y, self.char, libtcod.BKGND_NONE)
 
     def clear(self):
+        # Draw tile where player was
+        global tilemap
         tilemap.tiles[self.x][self.y].draw()
-
-
-class Map(Drawable):
-    def __init__(self, width, height):
-        Drawable.__init__(self)
-        self.width = width
-        self.height = height
-        self.tiles = [[Tile(x, y, blocked=False) for y in range(0, self.height)] for x in range(0, self.width)]
-
-        self.color_dark_wall = libtcod.Color(0, 0, 100)
-        self.color_dark_ground = libtcod.Color(50, 50, 150)
-
-        self.tiles[20][30].blocked = True
-        self.tiles[20][30].block_sight = True
-        self.tiles[25][33].blocked = True
-        self.tiles[25][33].block_sight = True
-
-    def draw(self):
-        for x in range(self.width):
-            for y in range(self.height):
-                self.tiles[x][y].draw()
 
 
 class Tile(Drawable):
@@ -76,20 +59,57 @@ class Tile(Drawable):
 
     def draw(self):
         if self.block_sight:
-            libtcod.console_put_char_ex(con, self.x, self.y, '#', libtcod.white, libtcod.black)
+            # Draw wall
+            libtcod.console_put_char_ex(con, self.x, self.y, libtcod.CHAR_BLOCK1, libtcod.white, libtcod.black)
         else:
-            libtcod.console_put_char_ex(con, self.x, self.y, '.', libtcod.white, libtcod.black)
+            # Draw floor
+            libtcod.console_put_char_ex(con, self.x, self.y, ' ', libtcod.white, libtcod.black)
+
+
+class Map(Drawable):
+    def __init__(self, width, height):
+        Drawable.__init__(self)
+        self.width = width
+        self.height = height
+        self.tiles = [[Tile(x, y, blocked=True) for y in range(0, self.height)] for x in range(0, self.width)]
+
+    def draw(self):
+        for x in range(self.width):
+            for y in range(self.height):
+                self.tiles[x][y].draw()
+
+
+class Rect:
+    def __init__(self, x, y, width, height):
+        self.x1 = x
+        self.y1 = y
+        self.x2 = x + width
+        self.y2 = y + height
+
+
+class Room(Rect):
+    def __init__(self, x, y, width, height):
+        Rect.__init__(self, x, y, width, height)
+
+        global tilemap
+        # go through the tiles in the rectangle and make them passable
+        for x in range(self.x1 + 1, self.x2):
+            for y in range(self.y1 + 1, self.y2):
+                tilemap.tiles[x][y].blocked = False
+                tilemap.tiles[x][y].block_sight = False
+
 
 
 def render_all():
-    for object in objects:
-        object.draw()
+    for obj in objects:
+        obj.draw()
 
     libtcod.console_blit(con, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 0, 0)
     libtcod.console_flush()
 
-    for object in objects:
-        object.clear()
+    for obj in objects:
+        obj.clear()
+
 
 def handle_keys():
     key = libtcod.console_check_for_keypress()
@@ -123,11 +143,16 @@ if __name__ == '__main__':
     libtcod.sys_set_fps(LIMIT_FPS)
     con = libtcod.console_new(SCREEN_WIDTH, SCREEN_HEIGHT)
 
+    global tilemap
     tilemap = Map(MAP_WIDTH, MAP_HEIGHT)
+
+    room1 = Room(20, 15, 10, 15)
+    room2 = Room(50, 15, 10, 15)
+
     tilemap.draw()
 
-    player = Object(SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, '@', libtcod.white)
-    npc = Object(SCREEN_WIDTH / 2 + 5, SCREEN_HEIGHT / 2, '@', libtcod.yellow)
+    player = Object(25, 20, '@', libtcod.white)
+    npc = Object(25, 25, '@', libtcod.yellow)
     objects = [player, npc]
 
     while not libtcod.console_is_window_closed():
