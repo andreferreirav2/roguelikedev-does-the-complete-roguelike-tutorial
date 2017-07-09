@@ -78,6 +78,23 @@ class Map(Drawable):
             for y in range(self.height):
                 self.tiles[x][y].draw()
 
+    def clear_tile(self, x, y):
+        self.tiles[x][y].blocked = False
+        self.tiles[x][y].block_sight = False
+
+    def create_room(self, rect):
+        for x in range(rect.x1 + 1, rect.x2):
+            for y in range(rect.y1 + 1, rect.y2):
+                self.clear_tile(x, y)
+
+    def create_h_tunnel(self, x1, x2, y):
+        for x in range(min(x1, x2), max(x1, x2) + 1):
+            self.clear_tile(x, y)
+
+    def create_v_tunnel(self, x, y1, y2):
+        for y in range(min(y1, y2), max(y1, y2) + 1):
+            self.clear_tile(x, y)
+
 
 class Rect:
     def __init__(self, x, y, width, height):
@@ -85,19 +102,6 @@ class Rect:
         self.y1 = y
         self.x2 = x + width
         self.y2 = y + height
-
-
-class Room(Rect):
-    def __init__(self, x, y, width, height):
-        Rect.__init__(self, x, y, width, height)
-
-        global tilemap
-        # go through the tiles in the rectangle and make them passable
-        for x in range(self.x1 + 1, self.x2):
-            for y in range(self.y1 + 1, self.y2):
-                tilemap.tiles[x][y].blocked = False
-                tilemap.tiles[x][y].block_sight = False
-
 
 
 def render_all():
@@ -146,8 +150,12 @@ if __name__ == '__main__':
     global tilemap
     tilemap = Map(MAP_WIDTH, MAP_HEIGHT)
 
-    room1 = Room(20, 15, 10, 15)
-    room2 = Room(50, 15, 10, 15)
+    tilemap.create_room(Rect(20, 15, 10, 15))
+    tilemap.create_room(Rect(50, 15, 10, 15))
+    tilemap.create_h_tunnel(30, 50, 23)
+    tilemap.create_v_tunnel(25, 15, 5)
+    tilemap.create_h_tunnel(25, 40, 5)
+    tilemap.create_v_tunnel(40, 5, 23)
 
     tilemap.draw()
 
