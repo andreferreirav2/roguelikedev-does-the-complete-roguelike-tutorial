@@ -9,7 +9,10 @@ LIMIT_FPS = 20
 MAP_WIDTH = 80
 MAP_HEIGHT = 45
 
-tilemap = None
+ROOM_MAX_SIZE = 10
+ROOM_MIN_SIZE = 6
+MAX_ROOMS = 30
+
 
 class Drawable:
     def __init__(self):
@@ -23,16 +26,16 @@ class Drawable:
 
 
 class Object(Drawable):
-    def __init__(self, x, y, char, color):
+    def __init__(self, map, x, y, char, color):
         Drawable.__init__(self)
+        self.map = map
         self.x = x
         self.y = y
         self.char = char
         self.color = color
 
     def move(self, dx, dy):
-        global tilemap
-        if not tilemap.tiles[self.x + dx][self.y + dy].blocked:
+        if not self.map.tiles[self.x + dx][self.y + dy].blocked:
             self.x += dx
             self.y += dy
 
@@ -43,8 +46,7 @@ class Object(Drawable):
 
     def clear(self):
         # Draw tile where player was
-        global tilemap
-        tilemap.tiles[self.x][self.y].draw()
+        self.map.tiles[self.x][self.y].draw()
 
 
 class Tile(Drawable):
@@ -73,6 +75,8 @@ class Map(Drawable):
         self.height = height
         self.tiles = [[Tile(x, y, blocked=True) for y in range(0, self.height)] for x in range(0, self.width)]
 
+        self.rooms = []
+
     def draw(self):
         for x in range(self.width):
             for y in range(self.height):
@@ -83,9 +87,22 @@ class Map(Drawable):
         self.tiles[x][y].block_sight = False
 
     def create_room(self, rect):
+        self.rooms.append(rect)
         for x in range(rect.x1 + 1, rect.x2):
             for y in range(rect.y1 + 1, rect.y2):
                 self.clear_tile(x, y)
+
+    def connect_rooms(self):
+        for i in range(0, len(self.rooms) - 1):
+            room_x, room_y = self.rooms[i].center()
+            next_x, next_y = self.rooms[i + 1].center()
+
+            if libtcod.random_get_int(0, 0, 1) == 1:
+                self.create_h_tunnel(room_x, next_x, room_y)
+                self.create_v_tunnel(next_x, room_y, next_y)
+            else:
+                self.create_v_tunnel(room_x, next_y, room_y)
+                self.create_h_tunnel(next_x, room_x, next_y)
 
     def create_h_tunnel(self, x1, x2, y):
         for x in range(min(x1, x2), max(x1, x2) + 1):
@@ -102,6 +119,13 @@ class Rect:
         self.y1 = y
         self.x2 = x + width
         self.y2 = y + height
+
+    def center(self):
+        return (self.x1 + self.x2) / 2, (self.y1 + self.y2) / 2
+
+    def intersects(self, other):
+        return (self.x1 <= other.x2 and self.x2 >= other.x1 and
+                self.y1 <= other.y2 and self.y2 >= other.y1)
 
 
 def render_all():
@@ -147,20 +171,27 @@ if __name__ == '__main__':
     libtcod.sys_set_fps(LIMIT_FPS)
     con = libtcod.console_new(SCREEN_WIDTH, SCREEN_HEIGHT)
 
-    global tilemap
-    tilemap = Map(MAP_WIDTH, MAP_HEIGHT)
+    map = Map(MAP_WIDTH, MAP_HEIGHT)
 
-    tilemap.create_room(Rect(20, 15, 10, 15))
-    tilemap.create_room(Rect(50, 15, 10, 15))
-    tilemap.create_h_tunnel(30, 50, 23)
-    tilemap.create_v_tunnel(25, 15, 5)
-    tilemap.create_h_tunnel(25, 40, 5)
-    tilemap.create_v_tunnel(40, 5, 23)
+    for i in range(MAX_ROOMS):
+        # random width and height
+        width = libtcod.random_get_int(0, ROOM_MIN_SIZE, ROOM_MAX_SIZE)
+        height = libtcod.random_get_int(0, ROOM_MIN_SIZE, ROOM_MAX_SIZE)
+        # random position without going out of the boundaries of the map
+        x = libtcod.random_get_int(0, 0, MAP_WIDTH - width - 1)
+        y = libtcod.random_get_int(0, 0, MAP_HEIGHT - height - 1)
 
-    tilemap.draw()
+        new_room = Rect(x, y, width, height)
+        if len([True for room in map.rooms if new_room.intersects(room)]) == 0:
+            map.create_room(new_room)
 
-    player = Object(25, 20, '@', libtcod.white)
-    npc = Object(25, 25, '@', libtcod.yellow)
+    map.connect_rooms()
+    map.draw()
+
+    center_x1, center_y1 = map.rooms[0].center()
+    center_x2, center_y2 = map.rooms[-1].center()
+    player = Object(map, center_x1, center_y1, '@', libtcod.white)
+    npc = Object(map, center_x2, center_y2, '@', libtcod.yellow)
     objects = [player, npc]
 
     while not libtcod.console_is_window_closed():
