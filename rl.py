@@ -41,19 +41,21 @@ if __name__ == '__main__':
     libtcod.console_set_custom_font('{}/arial10x10.png'.format(dir_path), libtcod.FONT_TYPE_GREYSCALE | libtcod.FONT_LAYOUT_TCOD)
     libtcod.console_init_root(SCREEN_WIDTH, SCREEN_HEIGHT, 'rl', False)
     libtcod.sys_set_fps(LIMIT_FPS)
+    con = libtcod.console_new(SCREEN_WIDTH, SCREEN_HEIGHT)
 
     while not libtcod.console_is_window_closed():
         # Draw the player
         libtcod.console_set_default_foreground(0, libtcod.red)
-        libtcod.console_put_char(0, PLAYER['x'], PLAYER['y'], '@', libtcod.BKGND_NONE)
+        libtcod.console_put_char(con, PLAYER['x'], PLAYER['y'], '@', libtcod.BKGND_NONE)
 
         #libtcod.console_set_default_foreground(0, libtcod.blue)
-        #libtcod.console_put_char(0, 10, 10, '@', libtcod.BKGND_NONE)
+        #libtcod.console_put_char(con, 10, 10, '@', libtcod.BKGND_NONE)
 
+        libtcod.console_blit(con, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 0, 0)
         libtcod.console_flush()
         # Clear char behind the player
         libtcod.console_set_default_foreground(0, Color(255, 127, 127))
-        libtcod.console_put_char(0, PLAYER['x'], PLAYER['y'], '@', libtcod.BKGND_NONE)
+        libtcod.console_put_char(con, PLAYER['x'], PLAYER['y'], '@', libtcod.BKGND_NONE)
 
 
         # key = libtcod.console_wait_for_keypress(True)
