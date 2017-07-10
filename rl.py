@@ -13,6 +13,9 @@ ROOM_MAX_SIZE = 10
 ROOM_MIN_SIZE = 6
 MAX_ROOMS = 30
 
+# Secondary console to draw on
+con = None
+
 
 class Drawable:
     def __init__(self):
@@ -189,12 +192,13 @@ def handle_keys(game):
         game.player.move(1, 0)
 
 
-if __name__ == '__main__':
+def main():
     dir_path = os.path.dirname(os.path.realpath(__file__))
     libtcod.console_set_custom_font('{}/arial10x10.png'.format(dir_path),
                                     libtcod.FONT_TYPE_GREYSCALE | libtcod.FONT_LAYOUT_TCOD)
     libtcod.console_init_root(SCREEN_WIDTH, SCREEN_HEIGHT, 'rl', False)
     libtcod.sys_set_fps(LIMIT_FPS)
+    global con
     con = libtcod.console_new(SCREEN_WIDTH, SCREEN_HEIGHT)
 
     game = Game()
@@ -209,3 +213,7 @@ if __name__ == '__main__':
         game.render_all()
         if handle_keys(game):
             break
+
+
+if __name__ == '__main__':
+    main()
