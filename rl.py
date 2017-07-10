@@ -26,16 +26,16 @@ class Drawable:
 
 
 class Object(Drawable):
-    def __init__(self, map, x, y, char, color):
+    def __init__(self, x, y, char, color):
         Drawable.__init__(self)
-        self.map = map
+        self.game = None
         self.x = x
         self.y = y
         self.char = char
         self.color = color
 
     def move(self, dx, dy):
-        if not self.map.tiles[self.x + dx][self.y + dy].blocked:
+        if not self.game.map.tiles[self.x + dx][self.y + dy].blocked:
             self.x += dx
             self.y += dy
 
@@ -46,7 +46,7 @@ class Object(Drawable):
 
     def clear(self):
         # Draw tile where player was
-        self.map.tiles[self.x][self.y].draw()
+        self.game.map.tiles[self.x][self.y].draw()
 
 
 class Tile(Drawable):
@@ -128,18 +128,44 @@ class Rect:
                 self.y1 <= other.y2 and self.y2 >= other.y1)
 
 
-def render_all():
-    for obj in objects:
-        obj.draw()
+class Game:
+    def __init__(self):
+        self.map = Map(MAP_WIDTH, MAP_HEIGHT)
 
-    libtcod.console_blit(con, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 0, 0)
-    libtcod.console_flush()
+        for i in range(MAX_ROOMS):
+            # random width and height
+            width = libtcod.random_get_int(0, ROOM_MIN_SIZE, ROOM_MAX_SIZE)
+            height = libtcod.random_get_int(0, ROOM_MIN_SIZE, ROOM_MAX_SIZE)
+            # random position without going out of the boundaries of the map
+            x = libtcod.random_get_int(0, 0, MAP_WIDTH - width - 1)
+            y = libtcod.random_get_int(0, 0, MAP_HEIGHT - height - 1)
 
-    for obj in objects:
-        obj.clear()
+            new_room = Rect(x, y, width, height)
+            if len([True for room in self.map.rooms if new_room.intersects(room)]) == 0:
+                self.map.create_room(new_room)
+
+        self.map.connect_rooms()
+        self.objects = []
+        self.player = None
+
+    def add_object(self, obj, player=False):
+        obj.game = self
+        self.objects.append(obj)
+        if player:
+            self.player = obj
+
+    def render_all(self):
+        for obj in self.objects:
+            obj.draw()
+
+        libtcod.console_blit(con, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 0, 0)
+        libtcod.console_flush()
+
+        for obj in self.objects:
+            obj.clear()
 
 
-def handle_keys():
+def handle_keys(game):
     key = libtcod.console_check_for_keypress()
 
     if key.vk == libtcod.KEY_ENTER and key.lalt:
@@ -151,16 +177,16 @@ def handle_keys():
 
     # movement keys
     if libtcod.console_is_key_pressed(libtcod.KEY_UP):
-        player.move(0, -1)
+        game.player.move(0, -1)
 
     elif libtcod.console_is_key_pressed(libtcod.KEY_DOWN):
-        player.move(0, 1)
+        game.player.move(0, 1)
 
     elif libtcod.console_is_key_pressed(libtcod.KEY_LEFT):
-        player.move(-1, 0)
+        game.player.move(-1, 0)
 
     elif libtcod.console_is_key_pressed(libtcod.KEY_RIGHT):
-        player.move(1, 0)
+        game.player.move(1, 0)
 
 
 if __name__ == '__main__':
@@ -171,31 +197,15 @@ if __name__ == '__main__':
     libtcod.sys_set_fps(LIMIT_FPS)
     con = libtcod.console_new(SCREEN_WIDTH, SCREEN_HEIGHT)
 
-    map = Map(MAP_WIDTH, MAP_HEIGHT)
+    game = Game()
+    game.map.draw()
 
-    for i in range(MAX_ROOMS):
-        # random width and height
-        width = libtcod.random_get_int(0, ROOM_MIN_SIZE, ROOM_MAX_SIZE)
-        height = libtcod.random_get_int(0, ROOM_MIN_SIZE, ROOM_MAX_SIZE)
-        # random position without going out of the boundaries of the map
-        x = libtcod.random_get_int(0, 0, MAP_WIDTH - width - 1)
-        y = libtcod.random_get_int(0, 0, MAP_HEIGHT - height - 1)
-
-        new_room = Rect(x, y, width, height)
-        if len([True for room in map.rooms if new_room.intersects(room)]) == 0:
-            map.create_room(new_room)
-
-    map.connect_rooms()
-    map.draw()
-
-    center_x1, center_y1 = map.rooms[0].center()
-    center_x2, center_y2 = map.rooms[-1].center()
-    player = Object(map, center_x1, center_y1, '@', libtcod.white)
-    npc = Object(map, center_x2, center_y2, '@', libtcod.yellow)
-    objects = [player, npc]
+    center_x1, center_y1 = game.map.rooms[0].center()
+    center_x2, center_y2 = game.map.rooms[-1].center()
+    game.add_object(Object(center_x1, center_y1, '@', libtcod.white), player=True)
+    game.add_object(Object(center_x2, center_y2, '@', libtcod.yellow))
 
     while not libtcod.console_is_window_closed():
-        render_all()
-
-        if handle_keys():
+        game.render_all()
+        if handle_keys(game):
             break
