@@ -23,23 +23,26 @@ con = None
 fov_map = None
 
 class Drawable:
-    def __init__(self):
-        pass
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+        self.seen = False
+
+    def calculate_visibility(self):
+        is_visible = libtcod.map_is_in_fov(fov_map, self.x, self.y)
+        if not self.seen and is_visible:
+            self.seen = True
+
+        return is_visible
 
     def draw(self):
-        pass
-
-    def clear(self):
         pass
 
 
 class Object(Drawable):
     def __init__(self, x, y, char, color):
-        Drawable.__init__(self)
+        Drawable.__init__(self, x, y)
         self.game = None
-        self.x = x
-        self.y = y
-        self.seen = False
         self.char = char
         self.color = color
 
@@ -50,39 +53,23 @@ class Object(Drawable):
 
     def draw(self):
         # Draw the player
-        global fov_map
-        is_visible = libtcod.map_is_in_fov(fov_map, self.x, self.y)
-
-        if not self.seen and is_visible:
-            self.seen = True
+        self.calculate_visibility()
 
         if self.seen:
             libtcod.console_set_default_foreground(con, self.color)
             libtcod.console_put_char(con, self.x, self.y, self.char, libtcod.BKGND_NONE)
 
-    def clear(self):
-        # Draw tile where player was
-        self.game.map.tiles[self.x][self.y].draw()
-
 
 class Tile(Drawable):
     def __init__(self, x, y, blocked, block_sight=None):
-        Drawable.__init__(self)
-        self.x = x
-        self.y = y
-        self.seen = False
+        Drawable.__init__(self, x, y)
         self.blocked = blocked
         if block_sight is None:
             block_sight = blocked
         self.block_sight = block_sight
 
     def draw(self):
-        global fov_map
-        is_visible = libtcod.map_is_in_fov(fov_map, self.x, self.y)
-
-        if is_visible:
-            if not self.seen:
-                self.seen = True
+        is_visible = self.calculate_visibility()
 
         if self.seen:
             if self.block_sight:
@@ -99,9 +86,8 @@ class Tile(Drawable):
                     libtcod.console_put_char_ex(con, self.x, self.y, ' ', libtcod.white, libtcod.darker_gray)
 
 
-class Map(Drawable):
+class Map():
     def __init__(self, width, height):
-        Drawable.__init__(self)
         self.width = width
         self.height = height
         self.tiles = [[Tile(x, y, blocked=True) for y in range(0, self.height)] for x in range(0, self.width)]
@@ -197,9 +183,6 @@ class Game:
         libtcod.console_blit(con, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 0, 0)
         libtcod.console_flush()
 
-        for obj in self.objects:
-            obj.clear()
-
 
 def handle_keys(game):
     key = libtcod.console_check_for_keypress()
@@ -233,11 +216,13 @@ def handle_keys(game):
 
 
 def main():
+    global con
+    global fov_map
+
     dir_path = os.path.dirname(os.path.realpath(__file__))
     libtcod.console_set_custom_font('{}/arial10x10.png'.format(dir_path), libtcod.FONT_TYPE_GREYSCALE | libtcod.FONT_LAYOUT_TCOD)
     libtcod.console_init_root(SCREEN_WIDTH, SCREEN_HEIGHT, 'rl', False)
     libtcod.sys_set_fps(LIMIT_FPS)
-    global con
     con = libtcod.console_new(SCREEN_WIDTH, SCREEN_HEIGHT)
 
     game = Game()
@@ -247,7 +232,6 @@ def main():
     game.add_object(Object(center_x1, center_y1, '@', libtcod.blue), player=True)
     game.add_object(Object(center_x2, center_y2, '@', libtcod.red))
 
-    global fov_map
     fov_map = libtcod.map_new(MAP_WIDTH, MAP_HEIGHT)
     for y in range(MAP_HEIGHT):
         for x in range(MAP_WIDTH):
