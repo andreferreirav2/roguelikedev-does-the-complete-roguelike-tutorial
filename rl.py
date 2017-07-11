@@ -13,9 +13,14 @@ ROOM_MAX_SIZE = 10
 ROOM_MIN_SIZE = 6
 MAX_ROOMS = 30
 
+FOV_ALG = libtcod.FOV_BASIC
+FOV_LIGHT_WALLS = True
+TORCH_RADIUS = 10
+
 # Secondary console to draw on
 con = None
-
+# FOV MAP
+fov_map = None
 
 class Drawable:
     def __init__(self):
@@ -44,8 +49,11 @@ class Object(Drawable):
 
     def draw(self):
         # Draw the player
-        libtcod.console_set_default_foreground(con, self.color)
-        libtcod.console_put_char(con, self.x, self.y, self.char, libtcod.BKGND_NONE)
+        global fov_map
+        is_visible = libtcod.map_is_in_fov(fov_map, self.x, self.y)
+        if is_visible:
+            libtcod.console_set_default_foreground(con, self.color)
+            libtcod.console_put_char(con, self.x, self.y, self.char, libtcod.BKGND_NONE)
 
     def clear(self):
         # Draw tile where player was
@@ -63,12 +71,21 @@ class Tile(Drawable):
         self.block_sight = block_sight
 
     def draw(self):
+        global fov_map
+        is_visible = libtcod.map_is_in_fov(fov_map, self.x, self.y)
+
         if self.block_sight:
             # Draw wall
-            libtcod.console_put_char_ex(con, self.x, self.y, libtcod.CHAR_BLOCK1, libtcod.white, libtcod.black)
+            if is_visible:
+                libtcod.console_put_char_ex(con, self.x, self.y, '#', libtcod.darkest_gray, libtcod.darkest_yellow)
+            else:
+                libtcod.console_put_char_ex(con, self.x, self.y, '#', libtcod.darkest_gray, libtcod.black)
         else:
             # Draw floor
-            libtcod.console_put_char_ex(con, self.x, self.y, ' ', libtcod.white, libtcod.black)
+            if is_visible:
+                libtcod.console_put_char_ex(con, self.x, self.y, ' ', libtcod.white, libtcod.light_yellow)
+            else:
+                libtcod.console_put_char_ex(con, self.x, self.y, ' ', libtcod.white, libtcod.darker_gray)
 
 
 class Map(Drawable):
@@ -155,9 +172,14 @@ class Game:
         obj.game = self
         self.objects.append(obj)
         if player:
-            self.player = obj
+            if self.player is None:
+                self.player = obj
+            else:
+                raise Exception("There can only be one player, added more than one.")
 
     def render_all(self):
+        self.map.draw()
+
         for obj in self.objects:
             obj.draw()
 
@@ -170,49 +192,64 @@ class Game:
 
 def handle_keys(game):
     key = libtcod.console_check_for_keypress()
+    abort, recalc_fov = False, False
 
     if key.vk == libtcod.KEY_ENTER and key.lalt:
         # Alt+Enter: toggle fullscreen
         libtcod.console_set_fullscreen(not libtcod.console_is_fullscreen())
 
     elif key.vk == libtcod.KEY_ESCAPE:
-        return True
+        abort = True
 
     # movement keys
     if libtcod.console_is_key_pressed(libtcod.KEY_UP):
         game.player.move(0, -1)
+        recalc_fov = True
 
     elif libtcod.console_is_key_pressed(libtcod.KEY_DOWN):
         game.player.move(0, 1)
+        recalc_fov = True
 
     elif libtcod.console_is_key_pressed(libtcod.KEY_LEFT):
         game.player.move(-1, 0)
+        recalc_fov = True
 
     elif libtcod.console_is_key_pressed(libtcod.KEY_RIGHT):
         game.player.move(1, 0)
+        recalc_fov = True
+
+    return abort, recalc_fov
 
 
 def main():
     dir_path = os.path.dirname(os.path.realpath(__file__))
-    libtcod.console_set_custom_font('{}/arial10x10.png'.format(dir_path),
-                                    libtcod.FONT_TYPE_GREYSCALE | libtcod.FONT_LAYOUT_TCOD)
+    libtcod.console_set_custom_font('{}/arial10x10.png'.format(dir_path), libtcod.FONT_TYPE_GREYSCALE | libtcod.FONT_LAYOUT_TCOD)
     libtcod.console_init_root(SCREEN_WIDTH, SCREEN_HEIGHT, 'rl', False)
     libtcod.sys_set_fps(LIMIT_FPS)
     global con
     con = libtcod.console_new(SCREEN_WIDTH, SCREEN_HEIGHT)
 
     game = Game()
-    game.map.draw()
 
     center_x1, center_y1 = game.map.rooms[0].center()
     center_x2, center_y2 = game.map.rooms[-1].center()
-    game.add_object(Object(center_x1, center_y1, '@', libtcod.white), player=True)
-    game.add_object(Object(center_x2, center_y2, '@', libtcod.yellow))
+    game.add_object(Object(center_x1, center_y1, '@', libtcod.blue), player=True)
+    game.add_object(Object(center_x2, center_y2, '@', libtcod.red))
+
+    global fov_map
+    fov_map = libtcod.map_new(MAP_WIDTH, MAP_HEIGHT)
+    for y in range(MAP_HEIGHT):
+        for x in range(MAP_WIDTH):
+            libtcod.map_set_properties(fov_map, x, y, not game.map.tiles[x][y].block_sight, game.map.tiles[x][y].blocked)
+    libtcod.map_compute_fov(fov_map, game.player.x, game.player.y, TORCH_RADIUS, FOV_LIGHT_WALLS, FOV_ALG)
 
     while not libtcod.console_is_window_closed():
         game.render_all()
-        if handle_keys(game):
+        abort, recalc_fov = handle_keys(game)
+        if abort:
             break
+        if recalc_fov:
+            libtcod.map_compute_fov(fov_map, game.player.x, game.player.y, TORCH_RADIUS, FOV_LIGHT_WALLS, FOV_ALG)
 
 
 if __name__ == '__main__':
