@@ -39,6 +39,7 @@ class Object(Drawable):
         self.game = None
         self.x = x
         self.y = y
+        self.seen = False
         self.char = char
         self.color = color
 
@@ -51,7 +52,11 @@ class Object(Drawable):
         # Draw the player
         global fov_map
         is_visible = libtcod.map_is_in_fov(fov_map, self.x, self.y)
-        if is_visible:
+
+        if not self.seen and is_visible:
+            self.seen = True
+
+        if self.seen:
             libtcod.console_set_default_foreground(con, self.color)
             libtcod.console_put_char(con, self.x, self.y, self.char, libtcod.BKGND_NONE)
 
@@ -65,6 +70,7 @@ class Tile(Drawable):
         Drawable.__init__(self)
         self.x = x
         self.y = y
+        self.seen = False
         self.blocked = blocked
         if block_sight is None:
             block_sight = blocked
@@ -74,18 +80,23 @@ class Tile(Drawable):
         global fov_map
         is_visible = libtcod.map_is_in_fov(fov_map, self.x, self.y)
 
-        if self.block_sight:
-            # Draw wall
-            if is_visible:
-                libtcod.console_put_char_ex(con, self.x, self.y, '#', libtcod.darkest_gray, libtcod.darkest_yellow)
+        if is_visible:
+            if not self.seen:
+                self.seen = True
+
+        if self.seen:
+            if self.block_sight:
+                # Draw wall
+                if is_visible:
+                    libtcod.console_put_char_ex(con, self.x, self.y, '#', libtcod.darkest_gray, libtcod.darkest_yellow)
+                else:
+                    libtcod.console_put_char_ex(con, self.x, self.y, '#', libtcod.darkest_gray, libtcod.black)
             else:
-                libtcod.console_put_char_ex(con, self.x, self.y, '#', libtcod.darkest_gray, libtcod.black)
-        else:
-            # Draw floor
-            if is_visible:
-                libtcod.console_put_char_ex(con, self.x, self.y, ' ', libtcod.white, libtcod.light_yellow)
-            else:
-                libtcod.console_put_char_ex(con, self.x, self.y, ' ', libtcod.white, libtcod.darker_gray)
+                # Draw floor
+                if is_visible:
+                    libtcod.console_put_char_ex(con, self.x, self.y, ' ', libtcod.white, libtcod.light_yellow)
+                else:
+                    libtcod.console_put_char_ex(con, self.x, self.y, ' ', libtcod.white, libtcod.darker_gray)
 
 
 class Map(Drawable):
