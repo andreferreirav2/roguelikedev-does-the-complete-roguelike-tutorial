@@ -23,11 +23,13 @@ con = None
 # FOV MAP
 fov_map = None
 
+ACTION_EXIT, ACTION_RECALC_FOV = 0, 1
 
 class Drawable:
-    def __init__(self, x, y):
+    def __init__(self, x, y, blocks=False):
         self.x = x
         self.y = y
+        self.blocks = blocks
         self.seen = False
 
     def calculate_visibility(self):
@@ -42,8 +44,8 @@ class Drawable:
 
 
 class Object(Drawable):
-    def __init__(self, x, y, char, color):
-        Drawable.__init__(self, x, y)
+    def __init__(self, x, y, char, color, blocks=False):
+        Drawable.__init__(self, x, y, blocks)
         self.char = char
         self.color = color
         self.game_map = None
@@ -63,11 +65,10 @@ class Object(Drawable):
 
 
 class Tile(Drawable):
-    def __init__(self, x, y, blocked, block_sight=None):
-        Drawable.__init__(self, x, y)
-        self.blocked = blocked
+    def __init__(self, x, y, blocks, block_sight=None):
+        Drawable.__init__(self, x, y, blocks)
         if block_sight is None:
-            block_sight = blocked
+            block_sight = blocks
         self.block_sight = block_sight
 
     def draw(self):
@@ -92,7 +93,7 @@ class Map:
     def __init__(self, width, height, auto_create=False):
         self.width = width
         self.height = height
-        self.tiles = [[Tile(x, y, blocked=True) for y in range(0, self.height)] for x in range(0, self.width)]
+        self.tiles = [[Tile(x, y, blocks=True) for y in range(0, self.height)] for x in range(0, self.width)]
 
         self.rooms = []
         self.objects = []
@@ -102,11 +103,11 @@ class Map:
             self.create_rooms()
 
     def is_empty(self, x, y):
-        if self.tiles[x][y].blocked:
+        if self.tiles[x][y].blocks:
             return False
 
         for obj in self.objects:
-            if obj.x == x and obj.y == y:
+            if obj.blocks and obj.x == x and obj.y == y:
                 return False
 
         return True
@@ -117,7 +118,7 @@ class Map:
                 self.tiles[x][y].draw()
 
     def clear_tile(self, x, y):
-        self.tiles[x][y].blocked = False
+        self.tiles[x][y].blocks = False
         self.tiles[x][y].block_sight = False
 
     def create_room(self, rect, place_monsters=False):
@@ -135,10 +136,10 @@ class Map:
 
                 if libtcod.random_get_int(0, 0, 100) < 80:  # 80% chance of getting an orc
                     # create an orc
-                    self.add_object(Object(x, y, 'o', libtcod.desaturated_green))
+                    self.add_object(Object(x, y, 'o', libtcod.desaturated_green, blocks=True))
                 else:
                     # create a troll
-                    self.add_object(Object(x, y, 'T', libtcod.darker_green))
+                    self.add_object(Object(x, y, 'T', libtcod.darker_green, blocks=True))
 
     def connect_rooms(self):
         for i in range(0, len(self.rooms) - 1):
@@ -177,6 +178,8 @@ class Map:
         self.connect_rooms()
 
     def add_object(self, obj, player=False):
+        if not self.is_empty(obj.x, obj.y):
+            return
         obj.game_map = self
         self.objects.append(obj)
         if player:
@@ -212,33 +215,33 @@ class Rect:
 
 def handle_keys(game):
     key = libtcod.console_check_for_keypress()
-    abort, recalc_fov = False, False
+    action = None
 
     if key.vk == libtcod.KEY_ENTER and key.lalt:
         # Alt+Enter: toggle fullscreen
         libtcod.console_set_fullscreen(not libtcod.console_is_fullscreen())
 
     elif key.vk == libtcod.KEY_ESCAPE:
-        abort = True
+        return ACTION_EXIT
 
     # movement keys
     if libtcod.console_is_key_pressed(libtcod.KEY_UP):
         game.player.move(0, -1)
-        recalc_fov = True
+        action = ACTION_RECALC_FOV
 
     elif libtcod.console_is_key_pressed(libtcod.KEY_DOWN):
         game.player.move(0, 1)
-        recalc_fov = True
+        action = ACTION_RECALC_FOV
 
     elif libtcod.console_is_key_pressed(libtcod.KEY_LEFT):
         game.player.move(-1, 0)
-        recalc_fov = True
+        action = ACTION_RECALC_FOV
 
     elif libtcod.console_is_key_pressed(libtcod.KEY_RIGHT):
         game.player.move(1, 0)
-        recalc_fov = True
+        action = ACTION_RECALC_FOV
 
-    return abort, recalc_fov
+    return action
 
 
 def main():
@@ -262,15 +265,15 @@ def main():
     fov_map = libtcod.map_new(MAP_WIDTH, MAP_HEIGHT)
     for y in range(MAP_HEIGHT):
         for x in range(MAP_WIDTH):
-            libtcod.map_set_properties(fov_map, x, y, not game_map.tiles[x][y].block_sight, game_map.tiles[x][y].blocked)
+            libtcod.map_set_properties(fov_map, x, y, not game_map.tiles[x][y].block_sight, game_map.tiles[x][y].blocks)
     libtcod.map_compute_fov(fov_map, game_map.player.x, game_map.player.y, TORCH_RADIUS, FOV_LIGHT_WALLS, FOV_ALG)
 
     while not libtcod.console_is_window_closed():
         game_map.render_all()
-        abort, recalc_fov = handle_keys(game_map)
-        if abort:
+        action = handle_keys(game_map)
+        if action == ACTION_EXIT:
             break
-        if recalc_fov:
+        if action == ACTION_RECALC_FOV:
             libtcod.map_compute_fov(fov_map, game_map.player.x, game_map.player.y, TORCH_RADIUS, FOV_LIGHT_WALLS, FOV_ALG)
 
 
