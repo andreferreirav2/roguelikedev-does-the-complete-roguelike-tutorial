@@ -4,7 +4,7 @@ from libtcod import libtcodpy as libtcod
 
 SCREEN_WIDTH = 80
 SCREEN_HEIGHT = 50
-LIMIT_FPS = 15
+LIMIT_FPS = 20
 
 MAP_WIDTH = 80
 MAP_HEIGHT = 45
@@ -18,12 +18,20 @@ FOV_ALG = libtcod.FOV_BASIC
 FOV_LIGHT_WALLS = True
 TORCH_RADIUS = 10
 
+PLAYER_SPEED = 2
+DEFAULT_SPEED = 8
+DEFAULT_ATTACK_SPEED = 20
+
+STATE_PLAYING, STATE_PAUSE = 0, 1
+ACTION_EXIT, ACTION_MOVE = 0, 1
+
 # Secondary console to draw on
 con = None
 # FOV MAP
 fov_map = None
+# Game State
+game_state = STATE_PLAYING
 
-ACTION_EXIT, ACTION_RECALC_FOV = 0, 1
 
 class Drawable:
     def __init__(self, x, y, blocks=False):
@@ -44,16 +52,26 @@ class Drawable:
 
 
 class Object(Drawable):
-    def __init__(self, x, y, char, color, blocks=False):
+    def __init__(self, x, y, char, color, blocks=False, speed=DEFAULT_SPEED):
         Drawable.__init__(self, x, y, blocks)
         self.char = char
         self.color = color
         self.game_map = None
+        self.is_player = False
+        self.speed = speed
+        self.wait = libtcod.random_get_int(0, 0, speed)
 
-    def move(self, dx, dy):
-        if self.game_map.is_empty(self.x + dx, self.y + dy):
+    def move_or_attack(self, dx, dy):
+        if self.wait > 0:
+            return
+        occupier = self.game_map.get_occupier(self.x + dx, self.y + dy)
+        if occupier is None:
             self.x += dx
             self.y += dy
+        elif isinstance(occupier, Object):
+            # TODO ATTACK!
+            pass
+        self.wait = self.speed
 
     def draw(self):
         # Draw the player
@@ -102,15 +120,15 @@ class Map:
         if auto_create:
             self.create_rooms()
 
-    def is_empty(self, x, y):
+    def get_occupier(self, x, y):
         if self.tiles[x][y].blocks:
-            return False
+            return self.tiles[x][y]
 
         for obj in self.objects:
             if obj.blocks and obj.x == x and obj.y == y:
-                return False
+                return obj
 
-        return True
+        return None
 
     def draw(self):
         for x in range(self.width):
@@ -177,12 +195,13 @@ class Map:
 
         self.connect_rooms()
 
-    def add_object(self, obj, player=False):
-        if not self.is_empty(obj.x, obj.y):
+    def add_object(self, obj, is_player=False):
+        if self.get_occupier(obj.x, obj.y):
             return
         obj.game_map = self
+        obj.is_player = is_player
         self.objects.append(obj)
-        if player:
+        if is_player:
             if self.player is None:
                 self.player = obj
             else:
@@ -214,6 +233,7 @@ class Rect:
 
 
 def handle_keys(game):
+    global game_state
     key = libtcod.console_check_for_keypress()
     action = None
 
@@ -221,25 +241,30 @@ def handle_keys(game):
         # Alt+Enter: toggle fullscreen
         libtcod.console_set_fullscreen(not libtcod.console_is_fullscreen())
 
+    elif key.vk == libtcod.KEY_SPACE:
+        game_state = game_state ^ 1
+        return None
+
     elif key.vk == libtcod.KEY_ESCAPE:
         return ACTION_EXIT
 
     # movement keys
-    if libtcod.console_is_key_pressed(libtcod.KEY_UP):
-        game.player.move(0, -1)
-        action = ACTION_RECALC_FOV
+    if game_state == STATE_PLAYING:
+        if libtcod.console_is_key_pressed(libtcod.KEY_UP):
+            game.player.move_or_attack(0, -1)
+            action = ACTION_MOVE
 
-    elif libtcod.console_is_key_pressed(libtcod.KEY_DOWN):
-        game.player.move(0, 1)
-        action = ACTION_RECALC_FOV
+        elif libtcod.console_is_key_pressed(libtcod.KEY_DOWN):
+            game.player.move_or_attack(0, 1)
+            action = ACTION_MOVE
 
-    elif libtcod.console_is_key_pressed(libtcod.KEY_LEFT):
-        game.player.move(-1, 0)
-        action = ACTION_RECALC_FOV
+        elif libtcod.console_is_key_pressed(libtcod.KEY_LEFT):
+            game.player.move_or_attack(-1, 0)
+            action = ACTION_MOVE
 
-    elif libtcod.console_is_key_pressed(libtcod.KEY_RIGHT):
-        game.player.move(1, 0)
-        action = ACTION_RECALC_FOV
+        elif libtcod.console_is_key_pressed(libtcod.KEY_RIGHT):
+            game.player.move_or_attack(1, 0)
+            action = ACTION_MOVE
 
     return action
 
@@ -259,7 +284,7 @@ def main():
 
     center_x1, center_y1 = game_map.rooms[0].center()
     center_x2, center_y2 = game_map.rooms[-1].center()
-    game_map.add_object(Object(center_x1, center_y1, '@', libtcod.blue), player=True)
+    game_map.add_object(Object(center_x1, center_y1, '@', libtcod.blue, speed=PLAYER_SPEED), is_player=True)
     game_map.add_object(Object(center_x2, center_y2, '@', libtcod.red))
 
     fov_map = libtcod.map_new(MAP_WIDTH, MAP_HEIGHT)
@@ -271,9 +296,15 @@ def main():
     while not libtcod.console_is_window_closed():
         game_map.render_all()
         action = handle_keys(game_map)
+
+        for obj in game_map.objects:
+            obj.wait -= 1
+            if not obj.is_player:
+                obj.move_or_attack(libtcod.random_get_int(0, -1, 1), libtcod.random_get_int(0, -1, 1))
+
         if action == ACTION_EXIT:
             break
-        if action == ACTION_RECALC_FOV:
+        if action == ACTION_MOVE:
             libtcod.map_compute_fov(fov_map, game_map.player.x, game_map.player.y, TORCH_RADIUS, FOV_LIGHT_WALLS, FOV_ALG)
 
 
