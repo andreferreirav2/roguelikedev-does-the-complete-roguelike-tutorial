@@ -4,7 +4,7 @@ from libtcod import libtcodpy as libtcod
 
 SCREEN_WIDTH = 80
 SCREEN_HEIGHT = 50
-LIMIT_FPS = 20
+LIMIT_FPS = 15
 
 MAP_WIDTH = 80
 MAP_HEIGHT = 45
@@ -12,6 +12,7 @@ MAP_HEIGHT = 45
 ROOM_MAX_SIZE = 10
 ROOM_MIN_SIZE = 6
 MAX_ROOMS = 30
+MAX_MONSTERS_PER_ROOM = 3
 
 FOV_ALG = libtcod.FOV_BASIC
 FOV_LIGHT_WALLS = True
@@ -21,6 +22,7 @@ TORCH_RADIUS = 10
 con = None
 # FOV MAP
 fov_map = None
+
 
 class Drawable:
     def __init__(self, x, y):
@@ -42,20 +44,20 @@ class Drawable:
 class Object(Drawable):
     def __init__(self, x, y, char, color):
         Drawable.__init__(self, x, y)
-        self.game = None
         self.char = char
         self.color = color
+        self.game_map = None
 
     def move(self, dx, dy):
-        if not self.game.map.tiles[self.x + dx][self.y + dy].blocked:
+        if self.game_map.is_empty(self.x + dx, self.y + dy):
             self.x += dx
             self.y += dy
 
     def draw(self):
         # Draw the player
-        self.calculate_visibility()
+        is_visible = self.calculate_visibility()
 
-        if self.seen:
+        if is_visible:
             libtcod.console_set_default_foreground(con, self.color)
             libtcod.console_put_char(con, self.x, self.y, self.char, libtcod.BKGND_NONE)
 
@@ -86,13 +88,28 @@ class Tile(Drawable):
                     libtcod.console_put_char_ex(con, self.x, self.y, ' ', libtcod.white, libtcod.darker_gray)
 
 
-class Map():
-    def __init__(self, width, height):
+class Map:
+    def __init__(self, width, height, auto_create=False):
         self.width = width
         self.height = height
         self.tiles = [[Tile(x, y, blocked=True) for y in range(0, self.height)] for x in range(0, self.width)]
 
         self.rooms = []
+        self.objects = []
+        self.player = None
+
+        if auto_create:
+            self.create_rooms()
+
+    def is_empty(self, x, y):
+        if self.tiles[x][y].blocked:
+            return False
+
+        for obj in self.objects:
+            if obj.x == x and obj.y == y:
+                return False
+
+        return True
 
     def draw(self):
         for x in range(self.width):
@@ -103,11 +120,25 @@ class Map():
         self.tiles[x][y].blocked = False
         self.tiles[x][y].block_sight = False
 
-    def create_room(self, rect):
-        self.rooms.append(rect)
+    def create_room(self, rect, place_monsters=False):
         for x in range(rect.x1 + 1, rect.x2):
             for y in range(rect.y1 + 1, rect.y2):
                 self.clear_tile(x, y)
+
+        self.rooms.append(rect)
+
+        if place_monsters and len(self.rooms) != 1:  # Don't put monsters in the 1st room
+            num_monsters = libtcod.random_get_int(0, 0, MAX_MONSTERS_PER_ROOM)
+            for i in range(num_monsters):
+                x = libtcod.random_get_int(0, rect.x1 + 1, rect.x2 - 1)
+                y = libtcod.random_get_int(0, rect.y1 + 1, rect.y2 - 1)
+
+                if libtcod.random_get_int(0, 0, 100) < 80:  # 80% chance of getting an orc
+                    # create an orc
+                    self.add_object(Object(x, y, 'o', libtcod.desaturated_green))
+                else:
+                    # create a troll
+                    self.add_object(Object(x, y, 'T', libtcod.darker_green))
 
     def connect_rooms(self):
         for i in range(0, len(self.rooms) - 1):
@@ -129,6 +160,40 @@ class Map():
         for y in range(min(y1, y2), max(y1, y2) + 1):
             self.clear_tile(x, y)
 
+    def create_rooms(self):
+        for i in range(MAX_ROOMS):
+            # random width and height
+            width = libtcod.random_get_int(0, ROOM_MIN_SIZE, ROOM_MAX_SIZE)
+            height = libtcod.random_get_int(0, ROOM_MIN_SIZE, ROOM_MAX_SIZE)
+
+            # random position without going out of the boundaries of the map
+            x = libtcod.random_get_int(0, 0, MAP_WIDTH - width - 1)
+            y = libtcod.random_get_int(0, 0, MAP_HEIGHT - height - 1)
+
+            new_room = Rect(x, y, width, height)
+            if len([True for room in self.rooms if new_room.intersects(room)]) == 0:
+                self.create_room(new_room, place_monsters=True)
+
+        self.connect_rooms()
+
+    def add_object(self, obj, player=False):
+        obj.game_map = self
+        self.objects.append(obj)
+        if player:
+            if self.player is None:
+                self.player = obj
+            else:
+                raise Exception("There can only be one player, added more than one.")
+
+    def render_all(self):
+        self.draw()
+
+        for obj in self.objects:
+            obj.draw()
+
+        libtcod.console_blit(con, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 0, 0)
+        libtcod.console_flush()
+
 
 class Rect:
     def __init__(self, x, y, width, height):
@@ -143,45 +208,6 @@ class Rect:
     def intersects(self, other):
         return (self.x1 <= other.x2 and self.x2 >= other.x1 and
                 self.y1 <= other.y2 and self.y2 >= other.y1)
-
-
-class Game:
-    def __init__(self):
-        self.map = Map(MAP_WIDTH, MAP_HEIGHT)
-
-        for i in range(MAX_ROOMS):
-            # random width and height
-            width = libtcod.random_get_int(0, ROOM_MIN_SIZE, ROOM_MAX_SIZE)
-            height = libtcod.random_get_int(0, ROOM_MIN_SIZE, ROOM_MAX_SIZE)
-            # random position without going out of the boundaries of the map
-            x = libtcod.random_get_int(0, 0, MAP_WIDTH - width - 1)
-            y = libtcod.random_get_int(0, 0, MAP_HEIGHT - height - 1)
-
-            new_room = Rect(x, y, width, height)
-            if len([True for room in self.map.rooms if new_room.intersects(room)]) == 0:
-                self.map.create_room(new_room)
-
-        self.map.connect_rooms()
-        self.objects = []
-        self.player = None
-
-    def add_object(self, obj, player=False):
-        obj.game = self
-        self.objects.append(obj)
-        if player:
-            if self.player is None:
-                self.player = obj
-            else:
-                raise Exception("There can only be one player, added more than one.")
-
-    def render_all(self):
-        self.map.draw()
-
-        for obj in self.objects:
-            obj.draw()
-
-        libtcod.console_blit(con, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 0, 0)
-        libtcod.console_flush()
 
 
 def handle_keys(game):
@@ -220,31 +246,32 @@ def main():
     global fov_map
 
     dir_path = os.path.dirname(os.path.realpath(__file__))
-    libtcod.console_set_custom_font('{}/arial10x10.png'.format(dir_path), libtcod.FONT_TYPE_GREYSCALE | libtcod.FONT_LAYOUT_TCOD)
+    libtcod.console_set_custom_font('{}/arial10x10.png'.format(dir_path),
+                                    libtcod.FONT_TYPE_GREYSCALE | libtcod.FONT_LAYOUT_TCOD)
     libtcod.console_init_root(SCREEN_WIDTH, SCREEN_HEIGHT, 'rl', False)
     libtcod.sys_set_fps(LIMIT_FPS)
     con = libtcod.console_new(SCREEN_WIDTH, SCREEN_HEIGHT)
 
-    game = Game()
+    game_map = Map(MAP_WIDTH, MAP_HEIGHT, auto_create=True)
 
-    center_x1, center_y1 = game.map.rooms[0].center()
-    center_x2, center_y2 = game.map.rooms[-1].center()
-    game.add_object(Object(center_x1, center_y1, '@', libtcod.blue), player=True)
-    game.add_object(Object(center_x2, center_y2, '@', libtcod.red))
+    center_x1, center_y1 = game_map.rooms[0].center()
+    center_x2, center_y2 = game_map.rooms[-1].center()
+    game_map.add_object(Object(center_x1, center_y1, '@', libtcod.blue), player=True)
+    game_map.add_object(Object(center_x2, center_y2, '@', libtcod.red))
 
     fov_map = libtcod.map_new(MAP_WIDTH, MAP_HEIGHT)
     for y in range(MAP_HEIGHT):
         for x in range(MAP_WIDTH):
-            libtcod.map_set_properties(fov_map, x, y, not game.map.tiles[x][y].block_sight, game.map.tiles[x][y].blocked)
-    libtcod.map_compute_fov(fov_map, game.player.x, game.player.y, TORCH_RADIUS, FOV_LIGHT_WALLS, FOV_ALG)
+            libtcod.map_set_properties(fov_map, x, y, not game_map.tiles[x][y].block_sight, game_map.tiles[x][y].blocked)
+    libtcod.map_compute_fov(fov_map, game_map.player.x, game_map.player.y, TORCH_RADIUS, FOV_LIGHT_WALLS, FOV_ALG)
 
     while not libtcod.console_is_window_closed():
-        game.render_all()
-        abort, recalc_fov = handle_keys(game)
+        game_map.render_all()
+        abort, recalc_fov = handle_keys(game_map)
         if abort:
             break
         if recalc_fov:
-            libtcod.map_compute_fov(fov_map, game.player.x, game.player.y, TORCH_RADIUS, FOV_LIGHT_WALLS, FOV_ALG)
+            libtcod.map_compute_fov(fov_map, game_map.player.x, game_map.player.y, TORCH_RADIUS, FOV_LIGHT_WALLS, FOV_ALG)
 
 
 if __name__ == '__main__':
