@@ -1,32 +1,9 @@
 import os
 
 from libtcod import libtcodpy as libtcod
+from consts import *
+from painter import get_instance as get_painter
 
-SCREEN_WIDTH = 80
-SCREEN_HEIGHT = 50
-LIMIT_FPS = 20
-
-MAP_WIDTH = 80
-MAP_HEIGHT = 45
-
-ROOM_MAX_SIZE = 10
-ROOM_MIN_SIZE = 6
-MAX_ROOMS = 30
-MAX_MONSTERS_PER_ROOM = 3
-
-FOV_ALG = libtcod.FOV_BASIC
-FOV_LIGHT_WALLS = True
-TORCH_RADIUS = 10
-
-PLAYER_SPEED = 2
-DEFAULT_SPEED = 8
-DEFAULT_ATTACK_SPEED = 20
-
-STATE_PLAYING, STATE_PAUSE = 0, 1
-ACTION_EXIT, ACTION_MOVE = 0, 1
-
-# Secondary console to draw on
-con = None
 # FOV MAP
 fov_map = None
 # Game State
@@ -75,11 +52,7 @@ class Object(Drawable):
 
     def draw(self):
         # Draw the player
-        is_visible = self.calculate_visibility()
-
-        if is_visible:
-            libtcod.console_set_default_foreground(con, self.color)
-            libtcod.console_put_char(con, self.x, self.y, self.char, libtcod.BKGND_NONE)
+        get_painter().draw_object(self.x, self.y, char=self.char, color=self.color, visible=self.calculate_visibility())
 
 
 class Tile(Drawable):
@@ -90,21 +63,8 @@ class Tile(Drawable):
         self.block_sight = block_sight
 
     def draw(self):
-        is_visible = self.calculate_visibility()
-
-        if self.seen:
-            if self.block_sight:
-                # Draw wall
-                if is_visible:
-                    libtcod.console_put_char_ex(con, self.x, self.y, '#', libtcod.darkest_gray, libtcod.darkest_yellow)
-                else:
-                    libtcod.console_put_char_ex(con, self.x, self.y, '#', libtcod.darkest_gray, libtcod.black)
-            else:
-                # Draw floor
-                if is_visible:
-                    libtcod.console_put_char_ex(con, self.x, self.y, ' ', libtcod.white, libtcod.light_yellow)
-                else:
-                    libtcod.console_put_char_ex(con, self.x, self.y, ' ', libtcod.white, libtcod.darker_gray)
+        get_painter().draw_tile(self.x, self.y, wall=self.block_sight, visible=self.calculate_visibility(),
+                                seen=self.seen)
 
 
 class Map:
@@ -207,15 +167,6 @@ class Map:
             else:
                 raise Exception("There can only be one player, added more than one.")
 
-    def render_all(self):
-        self.draw()
-
-        for obj in self.objects:
-            obj.draw()
-
-        libtcod.console_blit(con, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 0, 0)
-        libtcod.console_flush()
-
 
 class Rect:
     def __init__(self, x, y, width, height):
@@ -269,8 +220,16 @@ def handle_keys(game):
     return action
 
 
+def render_all(gamemap):
+    gamemap.draw()
+
+    for obj in gamemap.objects:
+        obj.draw()
+
+    get_painter().flush()
+
+
 def main():
-    global con
     global fov_map
 
     dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -278,7 +237,6 @@ def main():
                                     libtcod.FONT_TYPE_GREYSCALE | libtcod.FONT_LAYOUT_TCOD)
     libtcod.console_init_root(SCREEN_WIDTH, SCREEN_HEIGHT, 'rl', False)
     libtcod.sys_set_fps(LIMIT_FPS)
-    con = libtcod.console_new(SCREEN_WIDTH, SCREEN_HEIGHT)
 
     game_map = Map(MAP_WIDTH, MAP_HEIGHT, auto_create=True)
 
@@ -294,7 +252,7 @@ def main():
     libtcod.map_compute_fov(fov_map, game_map.player.x, game_map.player.y, TORCH_RADIUS, FOV_LIGHT_WALLS, FOV_ALG)
 
     while not libtcod.console_is_window_closed():
-        game_map.render_all()
+        render_all(game_map)
         action = handle_keys(game_map)
 
         for obj in game_map.objects:
@@ -305,7 +263,8 @@ def main():
         if action == ACTION_EXIT:
             break
         if action == ACTION_MOVE:
-            libtcod.map_compute_fov(fov_map, game_map.player.x, game_map.player.y, TORCH_RADIUS, FOV_LIGHT_WALLS, FOV_ALG)
+            libtcod.map_compute_fov(fov_map, game_map.player.x, game_map.player.y, TORCH_RADIUS, FOV_LIGHT_WALLS,
+                                    FOV_ALG)
 
 
 if __name__ == '__main__':
