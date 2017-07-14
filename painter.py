@@ -1,20 +1,21 @@
 from libtcod import libtcodpy as libtcod
 from consts import *
 
-__painter = None
-
-
-def get_instance():
-    global __painter
-    if not __painter:
-        __painter = Painter()
-    return __painter
-
 
 class Painter:
+    __painter = None
+
+    @staticmethod
+    def get_instance():
+        if Painter.__painter is None:
+            Painter()
+        return Painter.__painter
+
     def __init__(self):
         # Secondary console to draw on
         self.con = libtcod.console_new(SCREEN_WIDTH, SCREEN_HEIGHT)
+
+        Painter.__painter = self
 
     def draw_object(self, x, y, char, color, visible):
         if visible:
