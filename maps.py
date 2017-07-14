@@ -3,6 +3,7 @@ from libtcod import libtcodpy as libtcod
 from consts import *
 import painter
 import game
+import entities
 
 
 class Map:
@@ -52,10 +53,10 @@ class Map:
 
                 if libtcod.random_get_int(0, 0, 100) < 80:  # 80% chance of getting an orc
                     # create an orc
-                    self.add_object(game.Object(x, y, 'o', libtcod.desaturated_green, blocks=True))
+                    self.add_object(entities.Object(x, y, 'o', libtcod.desaturated_green, blocks=True))
                 else:
                     # create a troll
-                    self.add_object(game.Object(x, y, 'T', libtcod.darker_green, blocks=True))
+                    self.add_object(entities.Object(x, y, 'T', libtcod.darker_green, blocks=True))
 
     def connect_rooms(self):
         for i in range(0, len(self.rooms) - 1):

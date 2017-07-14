@@ -3,35 +3,7 @@ from libtcod import libtcodpy as libtcod
 from consts import *
 import maps
 import painter
-
-
-class Object:
-    def __init__(self, x, y, char, color, blocks=False, speed=DEFAULT_SPEED):
-        self.x = x
-        self.y = y
-        self.blocks = blocks
-        self.char = char
-        self.color = color
-        self.is_player = False
-        self.seen = True
-        self.speed = speed
-        self.wait = libtcod.random_get_int(0, 0, speed)
-
-    def move_or_attack(self, dx, dy):
-        if self.wait > 0:
-            return
-        occupier = GameManager.get_instance().game_map.get_occupier(self.x + dx, self.y + dy)
-        if occupier is None:
-            self.x += dx
-            self.y += dy
-        elif isinstance(occupier, Object):
-            # TODO ATTACK!
-            pass
-        self.wait = self.speed
-
-    def draw(self):
-        # Draw the player
-        painter.Painter.get_instance().draw_object(self.x, self.y, char=self.char, color=self.color, visible=GameManager.get_instance().calculate_visibility(self))
+import entities
 
 
 class GameManager:
@@ -57,8 +29,8 @@ class GameManager:
 
         center_x1, center_y1 = self.game_map.rooms[0].center()
         center_x2, center_y2 = self.game_map.rooms[-1].center()
-        self.game_map.add_object(Object(center_x1, center_y1, '@', libtcod.blue, speed=PLAYER_SPEED), is_player=True)
-        self.game_map.add_object(Object(center_x2, center_y2, '@', libtcod.red))
+        self.game_map.add_object(entities.Object(center_x1, center_y1, '@', libtcod.blue, speed=PLAYER_SPEED), is_player=True)
+        self.game_map.add_object(entities.Object(center_x2, center_y2, '@', libtcod.red))
 
         self.fov_map = libtcod.map_new(MAP_WIDTH, MAP_HEIGHT)
         for y in range(MAP_HEIGHT):
