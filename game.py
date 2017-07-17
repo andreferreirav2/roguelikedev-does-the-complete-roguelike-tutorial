@@ -20,7 +20,7 @@ class GameManager:
             raise Exception("This is a singleton, back off!")
 
         dir_path = os.path.dirname(os.path.realpath(__file__))
-        libtcod.console_set_custom_font('{}/arial10x10.png'.format(dir_path),
+        libtcod.console_set_custom_font('{}/assets/arial10x10.png'.format(dir_path),
                                         libtcod.FONT_TYPE_GREYSCALE | libtcod.FONT_LAYOUT_TCOD)
         libtcod.console_init_root(SCREEN_WIDTH, SCREEN_HEIGHT, 'rl', False)
         libtcod.sys_set_fps(LIMIT_FPS)
@@ -99,10 +99,11 @@ class GameManager:
             self.render_all()
             action = self.handle_keys()
 
-            for obj in self.game_map.objects:
-                obj.wait -= 1
-                if not obj.is_player:
-                    obj.move_or_attack(libtcod.random_get_int(0, -1, 1), libtcod.random_get_int(0, -1, 1))
+            if self.game_state is STATE_PLAYING:
+                for obj in self.game_map.objects:
+                    obj.wait -= 1
+                    if not obj.is_player:
+                        obj.move_or_attack(libtcod.random_get_int(0, -1, 1), libtcod.random_get_int(0, -1, 1))
 
             if action == ACTION_EXIT:
                 break
