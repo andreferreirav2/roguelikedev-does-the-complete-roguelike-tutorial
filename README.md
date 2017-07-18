@@ -1,21 +1,26 @@
-# r/RoguelikeDev Does The Complete Roguelike Tutorial
+# Roguelike
 
-![RoguelikeDev Does the Complete Roguelike Tutorial Event Logo](https://i.imgur.com/ksc9EW3.png)
+This project follows [/r/roguelikedev](https://www.reddit.com/r/roguelikedev/)'s initiative of creating a tutorial series.
+All tutorials can be found [here](http://www.roguebasin.com/index.php?title=Complete_Roguelike_Tutorial,_using_python%2Blibtcod).
+This repo is a fork of the original to be able to link to other users doing the same tutorial (See other forks of upstream).
 
-At [r/roguelikedev](https://www.reddit.com/r/roguelikedev/) we're doing a dev-along following [The Complete Roguelike Tutorial](http://www.roguebasin.com/index.php?title=Complete_Roguelike_Tutorial,_using_python%2Blibtcod).
+## Usage
 
-## If you would like to participate on GitHub
+Roguelike uses [libtcod](https://bitbucket.org/libtcod/libtcod) and to ease usage, it is bundled with a mac compiled version, slightly tweaked to allow for relative paths.
+It was compiled using the instructions provided by [/u/droidenko](https://www.reddit.com/r/roguelikedev/comments/44ylt4/python_libtcod_on_macosx/).
 
-* [Sign up for a free personal account](https://github.com/signup/free) if you don't already have one.
-* Fork [this repository](https://github.com/aaron-santos/roguelikedev-does-the-complete-roguelike-tutorial) to your account.
-* Clone the repository on your computer and follow the tutorial.
-* Follow along with the [weekly posts](https://www.reddit.com/r/roguelikedev/search?q=TCRT&restrict_sr=on).
-* Update the `README.md` file to include a description of your game, how/where to play/download it, how to build/compile it, what dependencies it has, etc.
-* Share your game on the final week.
+To run the game, just execute:
+```bash
+python rl.py
+```
 
-## It's dangerous to go alone <img src="https://octodex.github.com/images/linktocat.jpg" height="40">
+## Screenshots
 
-If you're **new to Git, GitHub, or version control**…
-
-* [Git Documentation](https://git-scm.com/documentation) - everything you need to know about version control, and how to get started with Git.
-* [GitHub Help](https://help.github.com/) - everything you need to know about GitHub.
+### Week 4 - Field of View and Exploration / Preparing for combat
+![Monsters](screens/screen_5_monsters.png?raw=true "Optional Title")
+![Map Discovery](screens/screen_4_map_discovery.png?raw=true "Optional Title")
+![Fog of War](screens/screen_3_fog_of_war.png?raw=true "Optional Title")
+### Week 3 - The Dungeon
+![Map Generation](screens/screen_2_map_generation.png?raw=true "Optional Title")
+### Week 2 - The Object
+![Draw @](screens/screen_1_at.png?raw=true "Optional Title")
