@@ -17,10 +17,10 @@ python rl.py
 ## Screenshots
 
 ### Week 4 - Field of View and Exploration / Preparing for combat
-![Monsters](screens/screen_5_monsters.png?raw=true "Optional Title")
-![Map Discovery](screens/screen_4_map_discovery.png?raw=true "Optional Title")
-![Fog of War](screens/screen_3_fog_of_war.png?raw=true "Optional Title")
+![Monsters](screens/screen_5_monsters.png?raw=true "Look at the cute monsters")
+![Map Discovery](screens/screen_4_map_discovery.png?raw=true "It's dangerous out there!")
+![Fog of War](screens/screen_3_fog_of_war.png?raw=true "You can see what you can see")
 ### Week 3 - The Dungeon
-![Map Generation](screens/screen_2_map_generation.png?raw=true "Optional Title")
+![Map Generation](screens/screen_2_map_generation.png?raw=true "Boom! Dungeon")
 ### Week 2 - The Object
-![Draw @](screens/screen_1_at.png?raw=true "Optional Title")
+![Draw @](screens/screen_1_at.png?raw=true "@")
