@@ -18,8 +18,13 @@ class GameManager:
 
         center_x1, center_y1 = self.game_map.rooms[0].center()
         center_x2, center_y2 = self.game_map.rooms[-1].center()
-        self.game_map.add_object(entities.Object(center_x1, center_y1, speed=PLAYER_SPEED, painter=painters.ObjectPainter(obj_type='player')), is_player=True)
-        self.game_map.add_object(entities.Object(center_x2, center_y2, blocks=True, painter=painters.ObjectPainter(obj_type='boss')))
+        self.game_map.add_object(entities.Object('player', center_x1, center_y1, speed=PLAYER_SPEED,
+                                                 fighter=entities.Fighter(hp=30, defense=2, power=5),
+                                                 painter=painters.ObjectPainter(obj_type='player')), is_player=True)
+        self.game_map.add_object(entities.Object('boss', center_x2, center_y2,
+                                                 fighter=entities.Fighter(hp=6, defense=1, power=1),
+                                                 ai=entities.BasicMonster(),
+                                                 painter=painters.ObjectPainter(obj_type='boss')))
 
         self.fov_map = libtcod.map_new(MAP_WIDTH, MAP_HEIGHT)
         for y in range(MAP_HEIGHT):
@@ -59,19 +64,19 @@ class GameManager:
         # movement keys
         if self.game_state == STATE_PLAYING:
             if libtcod.console_is_key_pressed(libtcod.KEY_UP):
-                self.game_map.player.move_or_attack(0, -1)
+                self.game_map.player.move(0, -1)
                 action = ACTION_MOVE
 
             elif libtcod.console_is_key_pressed(libtcod.KEY_DOWN):
-                self.game_map.player.move_or_attack(0, 1)
+                self.game_map.player.move(0, 1)
                 action = ACTION_MOVE
 
             elif libtcod.console_is_key_pressed(libtcod.KEY_LEFT):
-                self.game_map.player.move_or_attack(-1, 0)
+                self.game_map.player.move(-1, 0)
                 action = ACTION_MOVE
 
             elif libtcod.console_is_key_pressed(libtcod.KEY_RIGHT):
-                self.game_map.player.move_or_attack(1, 0)
+                self.game_map.player.move(1, 0)
                 action = ACTION_MOVE
 
         return action
@@ -85,8 +90,8 @@ class GameManager:
             if self.game_state is STATE_PLAYING:
                 for obj in self.game_map.objects:
                     obj.wait -= 1
-                    if not obj.is_player:
-                        obj.move_or_attack(libtcod.random_get_int(0, -1, 1), libtcod.random_get_int(0, -1, 1))
+                    if obj.ai:
+                        obj.ai.take_turn()
 
             # Calculate visibility for tiles and objects
             for row in self.game_map.tiles:

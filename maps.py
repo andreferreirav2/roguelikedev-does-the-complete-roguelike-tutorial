@@ -46,11 +46,9 @@ class Map:
                 y = libtcod.random_get_int(0, rect.y1 + 1, rect.y2 - 1)
 
                 if libtcod.random_get_int(0, 0, 100) < 80:  # 80% chance of getting an orc
-                    # create an orc
-                    self.add_object(entities.Object(x, y, blocks=True, painter=painters.ObjectPainter('orc')))
+                    self.add_object(entities.Object('orc', x, y, ai=entities.BasicMonster(), painter=painters.ObjectPainter('orc')))
                 else:
-                    # create a troll
-                    self.add_object(entities.Object(x, y, blocks=True, painter=painters.ObjectPainter('troll')))
+                    self.add_object(entities.Object('troll', x, y, ai=entities.BasicMonster(), painter=painters.ObjectPainter('troll')))
 
     def connect_rooms(self):
         for i in range(0, len(self.rooms) - 1):
