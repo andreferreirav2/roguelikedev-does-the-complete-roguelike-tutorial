@@ -1,20 +1,22 @@
 from libtcod import libtcodpy as libtcod
 from consts import *
 import game
-import painter
+import painters
 
 
 class Object:
-    def __init__(self, x, y, char, color, blocks=False, speed=DEFAULT_SPEED):
+    def __init__(self, x, y, blocks=False, speed=DEFAULT_SPEED, painter=None):
         self.x = x
         self.y = y
         self.blocks = blocks
-        self.char = char
-        self.color = color
         self.is_player = False
         self.seen = True
+        self.visible = False
         self.speed = speed
         self.wait = libtcod.random_get_int(0, 0, speed)
+        self.painter = painter
+        if painter is not None:
+            painter.owner = self
 
     def move_or_attack(self, dx, dy):
         if self.wait > 0:
@@ -27,8 +29,3 @@ class Object:
             # TODO ATTACK!
             pass
         self.wait = self.speed
-
-    def draw(self):
-        # Draw the player
-        painter.Painter.get_instance().draw_object(self.x, self.y, char=self.char, color=self.color, visible=game.GameManager.get_instance().calculate_visibility(self))
-

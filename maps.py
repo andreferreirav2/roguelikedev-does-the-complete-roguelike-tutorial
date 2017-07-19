@@ -1,7 +1,7 @@
 from libtcod import libtcodpy as libtcod
 
 from consts import *
-import painter
+import painters
 import game
 import entities
 
@@ -32,7 +32,7 @@ class Map:
     def draw(self):
         for x in range(self.width):
             for y in range(self.height):
-                self.tiles[x][y].draw()
+                self.tiles[x][y].painter.draw()
 
     def clear_tile(self, x, y):
         self.tiles[x][y].blocks = False
@@ -53,10 +53,10 @@ class Map:
 
                 if libtcod.random_get_int(0, 0, 100) < 80:  # 80% chance of getting an orc
                     # create an orc
-                    self.add_object(entities.Object(x, y, 'o', libtcod.desaturated_green, blocks=True))
+                    self.add_object(entities.Object(x, y, blocks=True, painter=painters.ObjectPainter('orc')))
                 else:
                     # create a troll
-                    self.add_object(entities.Object(x, y, 'T', libtcod.darker_green, blocks=True))
+                    self.add_object(entities.Object(x, y, blocks=True, painter=painters.ObjectPainter('troll')))
 
     def connect_rooms(self):
         for i in range(0, len(self.rooms) - 1):
@@ -112,13 +112,11 @@ class Tile:
         self.y = y
         self.blocks = blocks
         self.seen = False
+        self.visible = False
         if block_sight is None:
             block_sight = blocks
         self.block_sight = block_sight
-
-    def draw(self):
-        painter.Painter.get_instance().draw_tile(self.x, self.y, wall=self.block_sight, visible=game.GameManager.get_instance().calculate_visibility(self), seen=self.seen)
-
+        self.painter = painters.TilePainter(owner=self)
 
 class Rect:
     def __init__(self, x, y, width, height):
