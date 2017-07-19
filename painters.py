@@ -2,36 +2,24 @@ from libtcod import libtcodpy as libtcod
 from consts import *
 
 
-class Painter:
-    __painter = None
-
-    @staticmethod
-    def get_instance():
-        if Painter.__painter is None:
-            Painter()
-        return Painter.__painter
-
-    def __init__(self):
-        # Secondary console to draw on
-        self.con = libtcod.console_new(SCREEN_WIDTH, SCREEN_HEIGHT)
-        Painter.__painter = self
-
-    def flush(self):
-        libtcod.console_blit(self.con, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 0, 0)
-        libtcod.console_flush()
-
-
 class GamePainter:
     def __init__(self, owner=None):
         self.owner = owner
+        self.con = libtcod.console_new(SCREEN_WIDTH, SCREEN_HEIGHT)
 
     def draw(self):
-        self.owner.game_map.draw()
+        # Draw map
+        for x in range(self.owner.game_map.width):
+            for y in range(self.owner.game_map.height):
+                self.owner.game_map.tiles[x][y].painter.draw(self.con)
 
+        # Draw objects
         for obj in self.owner.game_map.objects:
-            obj.painter.draw()
+            obj.painter.draw(self.con)
 
-        Painter.get_instance().flush()
+        # Flush con to default console
+        libtcod.console_blit(self.con, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 0, 0)
+        libtcod.console_flush()
 
 
 class ObjectPainter:
@@ -39,20 +27,20 @@ class ObjectPainter:
         self.owner = owner
         self.obj_type = obj_type
 
-    def __draw_obj(self, char, color):
-        libtcod.console_set_default_foreground(Painter.get_instance().con, color)
-        libtcod.console_put_char(Painter.get_instance().con, self.owner.x, self.owner.y, char, libtcod.BKGND_NONE)
+    def __draw_obj(self, con, char, color):
+        libtcod.console_set_default_foreground(con, color)
+        libtcod.console_put_char(con, self.owner.x, self.owner.y, char, libtcod.BKGND_NONE)
 
-    def draw(self):
+    def draw(self, con):
         if self.owner.visible:
             if self.obj_type == 'player':
-                self.__draw_obj('@', libtcod.blue)
+                self.__draw_obj(con, '@', libtcod.blue)
             elif self.obj_type == 'orc':
-                self.__draw_obj('o', libtcod.desaturated_green)
+                self.__draw_obj(con, 'o', libtcod.desaturated_green)
             elif self.obj_type == 'troll':
-                self.__draw_obj('T', libtcod.darker_green)
+                self.__draw_obj(con, 'T', libtcod.darker_green)
             elif self.obj_type == 'boss':
-                self.__draw_obj('@', libtcod.red)
+                self.__draw_obj(con, '@', libtcod.red)
             else:
                 raise Exception("{} is not a valid obj_type for the ObjectPainter.".format(self.obj_type))
 
@@ -61,17 +49,17 @@ class TilePainter:
     def __init__(self, owner=None):
         self.owner = owner
 
-    def draw(self):
+    def draw(self, con):
         if self.owner.seen:
             if self.owner.block_sight:
                 # Draw wall
                 if self.owner.visible:
-                    libtcod.console_put_char_ex(Painter.get_instance().con, self.owner.x, self.owner.y, '#', libtcod.darkest_gray, libtcod.darkest_yellow)
+                    libtcod.console_put_char_ex(con, self.owner.x, self.owner.y, '#', libtcod.darkest_gray, libtcod.darkest_yellow)
                 else:
-                    libtcod.console_put_char_ex(Painter.get_instance().con, self.owner.x, self.owner.y, '#', libtcod.darkest_gray, libtcod.black)
+                    libtcod.console_put_char_ex(con, self.owner.x, self.owner.y, '#', libtcod.darkest_gray, libtcod.black)
             else:
                 # Draw floor
                 if self.owner.visible:
-                    libtcod.console_put_char_ex(Painter.get_instance().con, self.owner.x, self.owner.y, ' ', libtcod.white, libtcod.light_yellow)
+                    libtcod.console_put_char_ex(con, self.owner.x, self.owner.y, ' ', libtcod.white, libtcod.light_yellow)
                 else:
-                    libtcod.console_put_char_ex(Painter.get_instance().con, self.owner.x, self.owner.y, ' ', libtcod.white, libtcod.darker_gray)
+                    libtcod.console_put_char_ex(con, self.owner.x, self.owner.y, ' ', libtcod.white, libtcod.darker_gray)

@@ -1,7 +1,6 @@
 from libtcod import libtcodpy as libtcod
 from consts import *
 import game
-import painters
 
 
 class Object:
@@ -14,6 +13,7 @@ class Object:
         self.visible = False
         self.speed = speed
         self.wait = libtcod.random_get_int(0, 0, speed)
+        self.game_map = None
         self.painter = painter
         if painter is not None:
             painter.owner = self
@@ -21,7 +21,7 @@ class Object:
     def move_or_attack(self, dx, dy):
         if self.wait > 0:
             return
-        occupier = game.GameManager.get_instance().game_map.get_occupier(self.x + dx, self.y + dy)
+        occupier = self.game_map.get_occupier(self.x + dx, self.y + dy)
         if occupier is None:
             self.x += dx
             self.y += dy

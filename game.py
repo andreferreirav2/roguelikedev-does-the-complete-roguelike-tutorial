@@ -7,21 +7,10 @@ import entities
 
 
 class GameManager:
-    __instance = None
-
-    @staticmethod
-    def get_instance():
-        if GameManager.__instance is None:
-            GameManager()
-        return GameManager.__instance
 
     def __init__(self):
-        if GameManager.__instance is not None:
-            raise Exception("This is a singleton, back off!")
-
         dir_path = os.path.dirname(os.path.realpath(__file__))
-        libtcod.console_set_custom_font('{}/assets/arial10x10.png'.format(dir_path),
-                                        libtcod.FONT_TYPE_GREYSCALE | libtcod.FONT_LAYOUT_TCOD)
+        libtcod.console_set_custom_font('{}/assets/arial10x10.png'.format(dir_path), libtcod.FONT_TYPE_GREYSCALE | libtcod.FONT_LAYOUT_TCOD)
         libtcod.console_init_root(SCREEN_WIDTH, SCREEN_HEIGHT, 'rl', False)
         libtcod.sys_set_fps(LIMIT_FPS)
 
@@ -42,9 +31,6 @@ class GameManager:
 
         # Game State
         self.game_state = STATE_PLAYING
-
-        GameManager.__instance = self
-
 
     def calculate_visibility(self, obj):
         is_visible = libtcod.map_is_in_fov(self.fov_map, obj.x, obj.y)

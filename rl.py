@@ -1,8 +1,8 @@
-import game
+from game import GameManager
 
 
 def main():
-    game_instance = game.GameManager.get_instance()
+    game_instance = GameManager()
     game_instance.run()
 
 

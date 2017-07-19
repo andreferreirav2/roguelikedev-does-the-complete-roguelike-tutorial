@@ -2,7 +2,6 @@ from libtcod import libtcodpy as libtcod
 
 from consts import *
 import painters
-import game
 import entities
 
 
@@ -28,11 +27,6 @@ class Map:
                 return obj
 
         return None
-
-    def draw(self):
-        for x in range(self.width):
-            for y in range(self.height):
-                self.tiles[x][y].painter.draw()
 
     def clear_tile(self, x, y):
         self.tiles[x][y].blocks = False
@@ -99,6 +93,8 @@ class Map:
             return
         obj.is_player = is_player
         self.objects.append(obj)
+        obj.game_map = self
+
         if is_player:
             if self.player is None:
                 self.player = obj
