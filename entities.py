@@ -51,17 +51,21 @@ class Object:
         self.move(dx, dy)
 
     def move(self, dx, dy):
+        if not self.game_map.is_occupied(self.x + dx, self.y + dy):
+            self.x += dx
+            self.y += dy
+
+    def move_or_attack(self, dx, dy):
         if self.wait > 0:
             return
         self.wait = self.speed
 
-        occupier = self.game_map.get_occupier(self.x + dx, self.y + dy)
-        if occupier is None:
-            self.x += dx
-            self.y += dy
+        if not self.game_map.is_occupied(self.x + dx, self.y + dy):
+            self.move(dx, dy)
         else:
-            # TODO ATTACK!
-            pass  # raise Exception("{} is trying to move from {} to {}, dest already has {}".format(self.name, (self.x, self.y), (self.x + dx, self.y + dy), occupier))
+            occupier = self.game_map.get_occupier(self.x + dx, self.y + dy)
+            if occupier and occupier.fighter:
+                occupier.fighter.attack(occupier)
 
 
 class Fighter:
@@ -72,19 +76,38 @@ class Fighter:
         self.defense = defense
         self.power = power
 
+    def take_damage(self, damage):
+        if damage > 0:
+            self.hp -= damage
+
+    def attack(self, target):
+        damage = self.power - target.fighter.defense
+
+        if damage > 0:
+            target.fighter.take_damage(damage)
+            print "{} attacks {} and takes {} hp ({}/{}hp).".format(self.owner.name.capitalize(), target.name, str(damage), str(target.fighter.hp), str(target.fighter.max_hp))
+        else:
+            print "{} tickles {}, the poor thing.".format(self.owner.name.capitalize(), target.name)
+
 
 class BasicMonster:
     def __init__(self):
         self.owner = None
 
     def take_turn(self):
-        if self.owner.wait > 0:
+        monster = self.owner
+        player = monster.game_map.player
+
+        if monster.wait > 0:
             return
+        monster.wait = monster.speed
 
-        if self.owner.visible:
-            if self.owner.distance_to(self.owner.game_map.player) >= 2:
-                self.owner.move_towards(self.owner.game_map.player.x, self.owner.game_map.player.y)
+        if monster.visible:
+            if monster.distance_to(player) >= 2:
+                monster.move_towards(player.x, player.y)
             else:
-                print "The {} growls.".format(self.owner.name)
+                if monster.fighter:
+                    monster.fighter.attack(player)
+                else:
+                    print "The {} growls.".format(self.owner.name)
 
-        self.owner.wait = self.owner.speed

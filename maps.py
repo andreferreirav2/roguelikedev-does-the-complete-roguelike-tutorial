@@ -18,10 +18,17 @@ class Map:
         if auto_create:
             self.create_rooms()
 
-    def get_occupier(self, x, y):
+    def is_occupied(self, x, y):
         if self.tiles[x][y].blocks:
-            return self.tiles[x][y]
+            return True
 
+        for obj in self.objects:
+            if obj.blocks and obj.x == x and obj.y == y:
+                return True
+
+        return False
+
+    def get_occupier(self, x, y):
         for obj in self.objects:
             if obj.blocks and obj.x == x and obj.y == y:
                 return obj
@@ -32,23 +39,12 @@ class Map:
         self.tiles[x][y].blocks = False
         self.tiles[x][y].block_sight = False
 
-    def create_room(self, rect, place_monsters=False):
+    def create_room(self, rect):
         for x in range(rect.x1 + 1, rect.x2):
             for y in range(rect.y1 + 1, rect.y2):
                 self.clear_tile(x, y)
 
         self.rooms.append(rect)
-
-        if place_monsters and len(self.rooms) != 1:  # Don't put monsters in the 1st room
-            num_monsters = libtcod.random_get_int(0, 0, MAX_MONSTERS_PER_ROOM)
-            for i in range(num_monsters):
-                x = libtcod.random_get_int(0, rect.x1 + 1, rect.x2 - 1)
-                y = libtcod.random_get_int(0, rect.y1 + 1, rect.y2 - 1)
-
-                if libtcod.random_get_int(0, 0, 100) < 80:  # 80% chance of getting an orc
-                    self.add_object(entities.Object('orc', x, y, ai=entities.BasicMonster(), painter=painters.ObjectPainter('orc')))
-                else:
-                    self.add_object(entities.Object('troll', x, y, ai=entities.BasicMonster(), painter=painters.ObjectPainter('troll')))
 
     def connect_rooms(self):
         for i in range(0, len(self.rooms) - 1):
@@ -82,12 +78,12 @@ class Map:
 
             new_room = Rect(x, y, width, height)
             if len([True for room in self.rooms if new_room.intersects(room)]) == 0:
-                self.create_room(new_room, place_monsters=True)
+                self.create_room(new_room)
 
         self.connect_rooms()
 
     def add_object(self, obj, is_player=False):
-        if self.get_occupier(obj.x, obj.y):
+        if self.is_occupied(obj.x, obj.y):
             return
         obj.is_player = is_player
         self.objects.append(obj)
