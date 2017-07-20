@@ -36,10 +36,10 @@ class GameManager:
         center_x1, center_y1 = self.map.rooms[0].center()
         center_x2, center_y2 = self.map.rooms[-1].center()
         self.map.add_object(entities.Object('player', center_x1, center_y1, speed=PLAYER_SPEED,
-                                            fighter=entities.Fighter(hp=30, defense=2, power=5, death_function=entities.Fighter.player_death),
+                                            fighter=entities.Fighter(hp=30, defense=1, power=4, death_function=entities.Fighter.player_death),
                                             painter=painters.ObjectPainter(obj_type='player')), is_player=True)
         self.map.add_object(entities.Object('boss', center_x2, center_y2,
-                                            fighter=entities.Fighter(hp=6, defense=1, power=1, death_function=entities.Fighter.monster_death),
+                                            fighter=entities.Fighter(hp=20, defense=3, power=4, death_function=entities.Fighter.monster_death),
                                             ai=entities.BasicMonster(),
                                             painter=painters.ObjectPainter(obj_type='boss')))
 
@@ -53,12 +53,12 @@ class GameManager:
                 if libtcod.random_get_int(0, 0, 100) < 80:  # 80% chance of getting an orc
                     self.map.add_object(entities.Object('orc', x, y,
                                                         ai=entities.BasicMonster(),
-                                                        fighter=entities.Fighter(hp=5, defense=1, power=1, death_function=entities.Fighter.monster_death),
+                                                        fighter=entities.Fighter(hp=5, defense=1, power=3, death_function=entities.Fighter.monster_death),
                                                         painter=painters.ObjectPainter('orc')))
                 else:
                     self.map.add_object(entities.Object('troll', x, y,
                                                         ai=entities.BasicMonster(),
-                                                        fighter=entities.Fighter(hp=10, defense=2, power=1, death_function=entities.Fighter.monster_death),
+                                                        fighter=entities.Fighter(hp=10, defense=2, power=2, death_function=entities.Fighter.monster_death),
                                                         painter=painters.ObjectPainter('troll')))
 
     def calculate_visibility(self, obj):
