@@ -15,7 +15,8 @@ class Object:
         self.visible = False
         self.speed = speed
         self.wait = libtcod.random_get_int(0, 0, speed)
-        self.game_map = None
+        self.map = None
+        self.state = STATE_PLAYING
 
         self.fighter = fighter
         if fighter is not None:
@@ -51,7 +52,7 @@ class Object:
         self.move(dx, dy)
 
     def move(self, dx, dy):
-        if not self.game_map.is_occupied(self.x + dx, self.y + dy):
+        if not self.map.is_occupied(self.x + dx, self.y + dy):
             self.x += dx
             self.y += dy
 
@@ -60,34 +61,51 @@ class Object:
             return
         self.wait = self.speed
 
-        if not self.game_map.is_occupied(self.x + dx, self.y + dy):
+        if not self.map.is_occupied(self.x + dx, self.y + dy):
             self.move(dx, dy)
         else:
-            occupier = self.game_map.get_occupier(self.x + dx, self.y + dy)
+            occupier = self.map.get_occupier(self.x + dx, self.y + dy)
             if occupier and occupier.fighter:
-                occupier.fighter.attack(occupier)
+                self.fighter.attack(occupier)
 
 
 class Fighter:
-    def __init__(self, hp, defense, power):
+    def __init__(self, hp, defense, power, death_function=None):
         self.owner = None
         self.max_hp = hp
         self.hp = hp
         self.defense = defense
         self.power = power
+        self.death_function = death_function
 
     def take_damage(self, damage):
         if damage > 0:
             self.hp -= damage
+        if self.hp <= 0:
+            if self.death_function:
+                self.death_function(self)
 
     def attack(self, target):
         damage = self.power - target.fighter.defense
 
         if damage > 0:
-            target.fighter.take_damage(damage)
             print "{} attacks {} and takes {} hp ({}/{}hp).".format(self.owner.name.capitalize(), target.name, str(damage), str(target.fighter.hp), str(target.fighter.max_hp))
+            target.fighter.take_damage(damage)
         else:
             print "{} tickles {}, the poor thing.".format(self.owner.name.capitalize(), target.name)
+
+    def player_death(self):
+        self.owner.map.game_manager.game_state = STATE_DEAD
+        self.owner.state = STATE_DEAD
+
+    def monster_death(self):
+        print "{} is dead".format(self.owner.name.capitalize())
+        self.owner.blocks = False
+        self.owner.ai = None
+        self.owner.fighter = None
+        self.owner.state = STATE_DEAD
+        self.owner.map.send_to_back(self.owner)
+        self.owner.name = "Remains of {}".format(self.owner.name)
 
 
 class BasicMonster:
@@ -96,7 +114,7 @@ class BasicMonster:
 
     def take_turn(self):
         monster = self.owner
-        player = monster.game_map.player
+        player = monster.map.player
 
         if monster.wait > 0:
             return

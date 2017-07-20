@@ -14,6 +14,7 @@ class Map:
         self.rooms = []
         self.objects = []
         self.player = None
+        self.game_manager = None
 
         if auto_create:
             self.create_rooms()
@@ -87,13 +88,17 @@ class Map:
             return
         obj.is_player = is_player
         self.objects.append(obj)
-        obj.game_map = self
+        obj.map = self
 
         if is_player:
             if self.player is None:
                 self.player = obj
             else:
                 raise Exception("There can only be one player, added more than one.")
+
+    def send_to_back(self, obj):
+        self.objects.remove(obj)
+        self.objects.insert(0, obj)
 
 
 class Tile:

@@ -9,13 +9,18 @@ class GamePainter:
 
     def draw(self):
         # Draw map
-        for x in range(self.owner.game_map.width):
-            for y in range(self.owner.game_map.height):
-                self.owner.game_map.tiles[x][y].painter.draw(self.con)
+        for x in range(self.owner.map.width):
+            for y in range(self.owner.map.height):
+                self.owner.map.tiles[x][y].painter.draw(self.con)
 
         # Draw objects
-        for obj in self.owner.game_map.objects:
+        for obj in self.owner.map.objects:
             obj.painter.draw(self.con)
+
+        # show the player's stats
+        libtcod.console_set_default_foreground(self.con, libtcod.white)
+        libtcod.console_print_ex(self.con, 1, SCREEN_HEIGHT - 2, libtcod.BKGND_NONE, libtcod.LEFT,
+                                 'HP: ' + str(self.owner.map.player.fighter.hp) + '/' + str(self.owner.map.player.fighter.max_hp))
 
         # Flush con to default console
         libtcod.console_blit(self.con, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 0, 0)
@@ -33,6 +38,10 @@ class ObjectPainter:
 
     def draw(self, con):
         if self.owner.visible:
+            if self.owner.state == STATE_DEAD:
+                self.__draw_obj(con, '%', libtcod.darker_red)
+                return
+
             if self.obj_type == 'player':
                 self.__draw_obj(con, '@', libtcod.blue)
             elif self.obj_type == 'orc':
