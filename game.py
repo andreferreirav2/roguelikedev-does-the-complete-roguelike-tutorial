@@ -1,4 +1,6 @@
 import os
+import textwrap
+
 from libtcod import libtcodpy as libtcod
 from consts import *
 import maps
@@ -25,6 +27,9 @@ class GameManager:
             for x in range(MAP_WIDTH):
                 libtcod.map_set_properties(self.fov_map, x, y, not self.map.tiles[x][y].block_sight, self.map.tiles[x][y].blocks)
         libtcod.map_compute_fov(self.fov_map, self.map.player.x, self.map.player.y, TORCH_RADIUS, FOV_LIGHT_WALLS, FOV_ALG)
+
+        self.messages = []
+        self.add_message("Welcome stranger, will you dare to look around? Be careful, it's dangerous out there!", libtcod.red)
 
         self.painter = painters.GamePainter(owner=self)
 
@@ -69,6 +74,15 @@ class GameManager:
         obj.visible = is_visible
 
         return is_visible
+
+    def add_message(self, message, color = libtcod.white):
+        message_lines = textwrap.wrap(message, MSG_WIDTH)
+
+        for line in message_lines:
+            if len(self.messages) >= MSG_HEIGHT:
+                del self.messages[0]
+
+            self.messages.append((line, color))
 
     def handle_keys(self):
         key = libtcod.console_check_for_keypress()

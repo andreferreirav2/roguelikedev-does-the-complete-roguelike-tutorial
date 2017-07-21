@@ -24,6 +24,11 @@ class GamePainter:
         self.draw_bar(1, 1, BAR_WIDTH, 'HP', self.owner.map.player.fighter.hp, self.owner.map.player.fighter.max_hp, libtcod.red, libtcod.darker_red)
         self.draw_bar(1, 3, BAR_WIDTH, 'MP', self.owner.map.player.fighter.hp, self.owner.map.player.fighter.max_hp, libtcod.blue, libtcod.darker_blue)
 
+        # Draw the messages
+        for (y, (line, color)) in enumerate(self.owner.messages):
+            libtcod.console_set_default_foreground(self.panel, color)
+            libtcod.console_print_ex(self.panel, MSG_X, y + 1, libtcod.BKGND_NONE, libtcod.LEFT, line)
+
         # Flush alternatives to default console
         libtcod.console_blit(self.con, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 0, 0)
         libtcod.console_blit(self.panel, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 0, PANEL_Y)

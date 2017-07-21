@@ -90,17 +90,23 @@ class Fighter:
         damage = self.power - target.fighter.defense
 
         if damage > 0:
-            print "{} attacks {} and takes {} hp ({}/{}hp).".format(self.owner.name.capitalize(), target.name, str(damage), str(target.fighter.hp), str(target.fighter.max_hp))
+            msg = "{} attacks {} and takes {} hp ({}/{}hp)".format(self.owner.name.capitalize(), target.name, str(damage), str(target.fighter.hp), str(target.fighter.max_hp))
+            self.owner.map.game_manager.add_message(msg)
             target.fighter.take_damage(damage)
         else:
-            print "{} tickles {}, the poor thing.".format(self.owner.name.capitalize(), target.name)
+            msg = "{} tickles {}, the poor thing".format(self.owner.name.capitalize(), target.name)
+            self.owner.map.game_manager.add_message(msg)
 
     def player_death(self):
         self.owner.map.game_manager.game_state = STATE_DEAD
         self.owner.state = STATE_DEAD
 
+        msg = "Player is dead".format(self.owner.name.capitalize())
+        self.owner.map.game_manager.add_message(msg, color=libtcod.light_red)
+
     def monster_death(self):
-        print "{} is dead".format(self.owner.name.capitalize())
+        msg = "{} is dead".format(self.owner.name.capitalize())
+        self.owner.map.game_manager.add_message(msg, color=libtcod.light_red)
         self.owner.blocks = False
         self.owner.ai = None
         self.owner.fighter = None
@@ -127,6 +133,4 @@ class BasicMonster:
             else:
                 if monster.fighter:
                     monster.fighter.attack(player)
-                else:
-                    print "The {} growls.".format(self.owner.name)
 

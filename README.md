@@ -16,7 +16,8 @@ python rl.py
 
 ## Screenshots
 
-### Week 5 - Going Berserk! / AI / Untimely deaths
+### Week 5 - AI / Untimely deaths / GUI
+![Deaths](screens/screen_7_hp_messages.png?raw=true "GUI and messages.")
 ![Deaths](screens/screen_6_deaths.png?raw=true "Die! DIE!!!!")
 ### Week 4 - Field of View and Exploration / Preparing for combat
 ![Monsters](screens/screen_5_monsters.png?raw=true "Look at the cute monsters")
