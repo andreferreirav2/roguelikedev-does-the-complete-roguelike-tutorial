@@ -20,14 +20,7 @@ class Map:
             self.create_rooms()
 
     def is_occupied(self, x, y):
-        if self.tiles[x][y].blocks:
-            return True
-
-        for obj in self.objects:
-            if obj.blocks and obj.x == x and obj.y == y:
-                return True
-
-        return False
+        return self.tiles[x][y].blocks or self.get_occupier(x, y)
 
     def get_occupier(self, x, y):
         for obj in self.objects:

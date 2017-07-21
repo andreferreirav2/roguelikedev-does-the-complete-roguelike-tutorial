@@ -82,6 +82,7 @@ class Fighter:
         if damage > 0:
             self.hp -= damage
         if self.hp <= 0:
+            self.hp = 0
             if self.death_function:
                 self.death_function(self)
 
