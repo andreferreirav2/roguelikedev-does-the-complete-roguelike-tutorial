@@ -32,6 +32,8 @@ class GameManager:
         self.add_message("Welcome stranger, will you dare to look around? Be careful, it's dangerous out there!", libtcod.red)
 
         self.painter = painters.GamePainter(owner=self)
+        self.key = libtcod.Key()
+        self.mouse = libtcod.Mouse()
 
         # Game State
         self.game_state = STATE_PLAYING
@@ -85,18 +87,17 @@ class GameManager:
             self.messages.append((line, color))
 
     def handle_keys(self):
-        key = libtcod.console_check_for_keypress()
         action = None
 
-        if key.vk == libtcod.KEY_ENTER and key.lalt:
+        if self.key.vk == libtcod.KEY_ENTER and self.key.lalt:
             # Alt+Enter: toggle fullscreen
             libtcod.console_set_fullscreen(not libtcod.console_is_fullscreen())
 
-        elif key.vk == libtcod.KEY_SPACE:
+        elif self.key.vk == libtcod.KEY_SPACE:
             self.game_state = self.game_state ^ 1
             return None
 
-        elif key.vk == libtcod.KEY_ESCAPE:
+        elif self.key.vk == libtcod.KEY_ESCAPE:
             return ACTION_EXIT
 
         # movement keys
@@ -121,6 +122,7 @@ class GameManager:
 
     def run(self):
         while not libtcod.console_is_window_closed():
+            libtcod.sys_check_for_event(libtcod.EVENT_KEY_PRESS|libtcod.EVENT_MOUSE, self.key, self.mouse)
             self.painter.draw()
             action = self.handle_keys()
 
