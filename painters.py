@@ -24,6 +24,10 @@ class GamePainter:
         self.draw_bar(1, 1, BAR_WIDTH, 'HP', self.owner.map.player.fighter.hp, self.owner.map.player.fighter.max_hp, libtcod.red, libtcod.darker_red)
         self.draw_bar(1, 3, BAR_WIDTH, 'MP', self.owner.map.player.fighter.hp, self.owner.map.player.fighter.max_hp, libtcod.blue, libtcod.darker_blue)
 
+        # Draw what is under the cursor
+        libtcod.console_set_default_foreground(self.panel, libtcod.light_gray)
+        libtcod.console_print_ex(self.panel, 1, 0, libtcod.BKGND_NONE, libtcod.LEFT, self.owner.get_element_under_mouse())
+
         # Draw the messages
         for (y, (line, color)) in enumerate(self.owner.messages):
             libtcod.console_set_default_foreground(self.panel, color)

@@ -102,23 +102,34 @@ class GameManager:
 
         # movement keys
         if self.game_state == STATE_PLAYING:
-            if libtcod.console_is_key_pressed(libtcod.KEY_UP):
+            if self.key.vk == libtcod.KEY_UP:
                 self.map.player.move_or_attack(0, -1)
                 action = ACTION_MOVE
 
-            elif libtcod.console_is_key_pressed(libtcod.KEY_DOWN):
+            elif self.key.vk == libtcod.KEY_DOWN:
                 self.map.player.move_or_attack(0, 1)
                 action = ACTION_MOVE
 
-            elif libtcod.console_is_key_pressed(libtcod.KEY_LEFT):
+            elif self.key.vk == libtcod.KEY_LEFT:
                 self.map.player.move_or_attack(-1, 0)
                 action = ACTION_MOVE
 
-            elif libtcod.console_is_key_pressed(libtcod.KEY_RIGHT):
+            elif self.key.vk == libtcod.KEY_RIGHT:
                 self.map.player.move_or_attack(1, 0)
                 action = ACTION_MOVE
 
         return action
+
+    def get_element_under_mouse(self):
+        (x, y) = self.mouse.cx, self.mouse.cy
+
+        elements = [obj.name for obj in self.map.objects[::-1] if obj.visible and obj.x == x and obj.y == y]
+
+        if x >= 0 and x < MAP_WIDTH and y >= 0 and y < MAP_HEIGHT and \
+                self.map.tiles[x][y].visible and self.map.tiles[x][y].blocks:
+            elements.append("wall")
+
+        return ", ".join(elements).capitalize()
 
     def run(self):
         while not libtcod.console_is_window_closed():
