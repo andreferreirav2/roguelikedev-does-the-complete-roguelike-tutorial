@@ -68,6 +68,9 @@ class GameManager:
                                                         fighter=entities.Fighter(hp=10, defense=2, power=2, death_function=entities.Fighter.monster_death),
                                                         painter=painters.ObjectPainter('troll')))
 
+    def recalculate_visibility(self):
+        libtcod.map_compute_fov(self.fov_map, self.map.player.x, self.map.player.y, TORCH_RADIUS, FOV_LIGHT_WALLS, FOV_ALG)
+
     def calculate_visibility(self, obj):
         is_visible = libtcod.map_is_in_fov(self.fov_map, obj.x, obj.y)
         if not obj.seen and is_visible:
@@ -154,5 +157,5 @@ class GameManager:
             if action == ACTION_EXIT:
                 break
             # if action == ACTION_MOVE:
-            libtcod.map_compute_fov(self.fov_map, self.map.player.x, self.map.player.y, TORCH_RADIUS, FOV_LIGHT_WALLS, FOV_ALG)
+            self.recalculate_visibility()
 

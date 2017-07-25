@@ -2,13 +2,54 @@ from libtcod import libtcodpy as libtcod
 from consts import *
 
 
+def to_camera_coordinates(map_x, map_y, camera_x, camera_y):
+    # convert coordinates on the map to coordinates on the screen
+    (x, y) = (map_x - camera_x, map_y - camera_y)
+
+    if x < 0 or y < 0 or x >= CAMERA_WIDTH or y >= CAMERA_HEIGHT:
+        return None, None  # if it's outside the view, return nothing
+
+    return x, y
+
+
+def move_camera(map_x, map_y):
+    # new camera coordinates (top-left corner of the screen relative to the map)
+    x = map_x - CAMERA_WIDTH / 2  # coordinates so that the target is at the center of the screen
+    y = map_y - CAMERA_HEIGHT / 2
+
+    # make sure the camera doesn't see outside the map
+    if x < 0:
+        x = 0
+    if y < 0:
+        y = 0
+    if x > MAP_WIDTH - CAMERA_WIDTH - 1:
+        x = MAP_WIDTH - CAMERA_WIDTH - 1
+    if y > MAP_HEIGHT - CAMERA_HEIGHT - 1:
+        y = MAP_HEIGHT - CAMERA_HEIGHT - 1
+
+    return x, y
+
 class GamePainter:
     def __init__(self, owner=None):
         self.owner = owner
         self.con = libtcod.console_new(MAP_WIDTH, MAP_HEIGHT)
         self.panel = libtcod.console_new(SCREEN_WIDTH, PANEL_HEIGHT)
 
+        self.camera_x, self.camera_y = 0, 0
+
     def draw(self):
+        (camera_x, camera_y) = move_camera(self.owner.map.player.x, self.owner.map.player.y)
+        if camera_x != self.camera_x or camera_y != self.camera_y:
+            print (camera_x, camera_y)
+            self.owner.recalculate_visibility()
+            (self.camera_x, self.camera_y) = (camera_x, camera_y)
+
+        # Draw map
+        # for x in range(CAMERA_WIDTH):
+        #     for y in range(CAMERA_HEIGHT):
+        #         (map_x, map_y) = (self.camera_x + x, self.camera_y + y)
+        #         self.owner.map.tiles[map_x][map_y].painter.draw(self.con, map_x, map_y)
+
         # Draw map
         for x in range(self.owner.map.width):
             for y in range(self.owner.map.height):
@@ -60,24 +101,29 @@ class ObjectPainter:
         self.owner = owner
         self.obj_type = obj_type
 
-    def __draw_obj(self, con, char, color):
+    def __draw_obj(self, con, x, y, char, color):
         libtcod.console_set_default_foreground(con, color)
-        libtcod.console_put_char(con, self.owner.x, self.owner.y, char, libtcod.BKGND_NONE)
+        libtcod.console_put_char(con, x, y, char, libtcod.BKGND_NONE)
 
-    def draw(self, con):
+    def draw(self, con, camera_x=None, camera_y=None):
         if self.owner.visible:
+            # if not camera_x or not camera_y:
+            view_x, view_y = self.owner.x, self.owner.y
+            # else:
+            #     view_x, view_y = to_camera_coordinates(self.owner.x, self.owner.y, camera_x, camera_y)
+
             if self.owner.state == STATE_DEAD:
-                self.__draw_obj(con, '%', libtcod.darker_red)
+                self.__draw_obj(con, view_x, view_y, '%', libtcod.darker_red)
                 return
 
             if self.obj_type == 'player':
-                self.__draw_obj(con, '@', libtcod.blue)
+                self.__draw_obj(con, view_x, view_y, '@', libtcod.blue)
             elif self.obj_type == 'orc':
-                self.__draw_obj(con, 'o', libtcod.desaturated_green)
+                self.__draw_obj(con, view_x, view_y, 'o', libtcod.desaturated_green)
             elif self.obj_type == 'troll':
-                self.__draw_obj(con, 'T', libtcod.darker_green)
+                self.__draw_obj(con, view_x, view_y, 'T', libtcod.darker_green)
             elif self.obj_type == 'boss':
-                self.__draw_obj(con, '@', libtcod.red)
+                self.__draw_obj(con, view_x, view_y, '@', libtcod.red)
             else:
                 raise Exception("{} is not a valid obj_type for the ObjectPainter.".format(self.obj_type))
 
@@ -86,17 +132,20 @@ class TilePainter:
     def __init__(self, owner=None):
         self.owner = owner
 
-    def draw(self, con):
+    def draw(self, con, map_x=None, map_y=None):
         if self.owner.seen:
+            # if not map_x or not map_y:
+            map_x, map_y = self.owner.x, self.owner.y
+
             if self.owner.block_sight:
                 # Draw wall
                 if self.owner.visible:
-                    libtcod.console_put_char_ex(con, self.owner.x, self.owner.y, '#', libtcod.darkest_gray, libtcod.darkest_yellow)
+                    libtcod.console_put_char_ex(con, map_x, map_y, '#', libtcod.darkest_gray, libtcod.darkest_yellow)
                 else:
-                    libtcod.console_put_char_ex(con, self.owner.x, self.owner.y, '#', libtcod.darkest_gray, libtcod.black)
+                    libtcod.console_put_char_ex(con, map_x, map_y, '#', libtcod.darkest_gray, libtcod.black)
             else:
                 # Draw floor
                 if self.owner.visible:
-                    libtcod.console_put_char_ex(con, self.owner.x, self.owner.y, ' ', libtcod.white, libtcod.light_yellow)
+                    libtcod.console_put_char_ex(con, map_x, map_y, ' ', libtcod.white, libtcod.light_yellow)
                 else:
-                    libtcod.console_put_char_ex(con, self.owner.x, self.owner.y, ' ', libtcod.white, libtcod.darker_gray)
+                    libtcod.console_put_char_ex(con, map_x, map_y, ' ', libtcod.white, libtcod.darker_gray)
