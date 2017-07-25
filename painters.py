@@ -38,6 +38,8 @@ class GamePainter:
         self.camera_x, self.camera_y = 0, 0
 
     def draw(self):
+        libtcod.console_set_default_background(self.con, libtcod.black)
+
         (camera_x, camera_y) = move_camera(self.owner.map.player.x, self.owner.map.player.y)
         if camera_x != self.camera_x or camera_y != self.camera_y:
             print (camera_x, camera_y)
@@ -45,19 +47,14 @@ class GamePainter:
             (self.camera_x, self.camera_y) = (camera_x, camera_y)
 
         # Draw map
-        # for x in range(CAMERA_WIDTH):
-        #     for y in range(CAMERA_HEIGHT):
-        #         (map_x, map_y) = (self.camera_x + x, self.camera_y + y)
-        #         self.owner.map.tiles[map_x][map_y].painter.draw(self.con, map_x, map_y)
-
-        # Draw map
-        for x in range(self.owner.map.width):
-            for y in range(self.owner.map.height):
-                self.owner.map.tiles[x][y].painter.draw(self.con)
+        for x in range(CAMERA_WIDTH):
+            for y in range(CAMERA_HEIGHT):
+                (map_x, map_y) = (self.camera_x + x, self.camera_y + y)
+                self.owner.map.tiles[map_x][map_y].painter.draw(self.con, x, y)
 
         # Draw objects
         for obj in self.owner.map.objects:
-            obj.painter.draw(self.con)
+            obj.painter.draw(self.con, self.camera_x, self.camera_y)
 
         # Draw the GUI
         libtcod.console_set_default_background(self.panel, libtcod.black)
@@ -107,10 +104,13 @@ class ObjectPainter:
 
     def draw(self, con, camera_x=None, camera_y=None):
         if self.owner.visible:
-            # if not camera_x or not camera_y:
-            view_x, view_y = self.owner.x, self.owner.y
-            # else:
-            #     view_x, view_y = to_camera_coordinates(self.owner.x, self.owner.y, camera_x, camera_y)
+            if camera_x is None or camera_y is None:
+                view_x, view_y = self.owner.x, self.owner.y
+            else:
+                view_x, view_y = to_camera_coordinates(self.owner.x, self.owner.y, camera_x, camera_y)
+
+            if view_x is None or view_y is None:
+                return
 
             if self.owner.state == STATE_DEAD:
                 self.__draw_obj(con, view_x, view_y, '%', libtcod.darker_red)
@@ -134,8 +134,8 @@ class TilePainter:
 
     def draw(self, con, map_x=None, map_y=None):
         if self.owner.seen:
-            # if not map_x or not map_y:
-            map_x, map_y = self.owner.x, self.owner.y
+            if not map_x or not map_y:
+                map_x, map_y = self.owner.x, self.owner.y
 
             if self.owner.block_sight:
                 # Draw wall

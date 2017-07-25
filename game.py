@@ -26,10 +26,10 @@ class GameManager:
         for y in range(MAP_HEIGHT):
             for x in range(MAP_WIDTH):
                 libtcod.map_set_properties(self.fov_map, x, y, not self.map.tiles[x][y].block_sight, self.map.tiles[x][y].blocks)
-        libtcod.map_compute_fov(self.fov_map, self.map.player.x, self.map.player.y, TORCH_RADIUS, FOV_LIGHT_WALLS, FOV_ALG)
+        self.recalculate_visibility()
 
         self.messages = []
-        self.add_message("Welcome stranger, will you dare to look around? Be careful, it's dangerous out there!", libtcod.red)
+        self.add_message("Be careful, it's dangerous out there!", libtcod.red)
 
         self.painter = painters.GamePainter(owner=self)
         self.key = libtcod.Key()
@@ -137,8 +137,15 @@ class GameManager:
     def run(self):
         while not libtcod.console_is_window_closed():
             libtcod.sys_check_for_event(libtcod.EVENT_KEY_PRESS|libtcod.EVENT_MOUSE, self.key, self.mouse)
-            self.painter.draw()
             action = self.handle_keys()
+
+            # Calculate visibility for tiles and objects
+            self.recalculate_visibility()
+            for row in self.map.tiles:
+                for tile in row:
+                    self.calculate_visibility(tile)
+            for obj in self.map.objects:
+                self.calculate_visibility(obj)
 
             # Do actions
             if self.game_state is STATE_PLAYING:
@@ -147,15 +154,8 @@ class GameManager:
                     if obj.ai:
                         obj.ai.take_turn()
 
-            # Calculate visibility for tiles and objects
-            for row in self.map.tiles:
-                for tile in row:
-                    self.calculate_visibility(tile)
-            for obj in self.map.objects:
-                self.calculate_visibility(obj)
-
             if action == ACTION_EXIT:
                 break
-            # if action == ACTION_MOVE:
-            self.recalculate_visibility()
+
+            self.painter.draw()
 
