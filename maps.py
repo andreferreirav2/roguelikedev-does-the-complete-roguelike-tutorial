@@ -16,7 +16,8 @@ class Map:
         self.player = None
         self.game_manager = None
 
-        self.create_rooms()
+        # self.create_rooms()
+        self.create_rooms_bsp()
 
     def is_occupied(self, x, y):
         return self.tiles[x][y].blocks or self.get_occupier(x, y)
@@ -74,6 +75,122 @@ class Map:
                 self.create_room(new_room)
 
         self.connect_rooms()
+
+    def vline(self, x, y1, y2):
+        if y1 > y2:
+            y1, y2 = y2, y1
+
+        for y in range(y1, y2 + 1):
+            self.clear_tile(x, y)
+
+    def vline_up(self, x, y):
+        while y >= 0 and self.tiles[x][y].blocks:
+            self.clear_tile(x, y)
+            y -= 1
+
+    def vline_down(self, x, y):
+        while y < MAP_HEIGHT and self.tiles[x][y].blocks:
+            self.clear_tile(x, y)
+            y += 1
+
+    def hline(self, x1, y, x2):
+        if x1 > x2:
+            x1, x2 = x2, x1
+        for x in range(x1, x2 + 1):
+            self.clear_tile(x, y)
+
+    def hline_left(self, x, y):
+        while x >= 0 and self.tiles[x][y].blocks:
+            self.clear_tile(x, y)
+            x -= 1
+
+    def hline_right(self, x, y):
+        while x < MAP_WIDTH and self.tiles[x][y].blocks:
+            self.clear_tile(x, y)
+            x += 1
+
+    def create_rooms_bsp(self):
+        # New root node
+        bsp = libtcod.bsp_new_with_size(0, 0, MAP_WIDTH, MAP_HEIGHT)
+
+        # Split into nodes
+        libtcod.bsp_split_recursive(bsp, 0, BSP_MAP_DEPTH, ROOM_MIN_SIZE + 1, ROOM_MIN_SIZE + 1, 1.5, 1.5)
+
+        # Traverse the nodes and create rooms
+        libtcod.bsp_traverse_inverted_level_order(bsp, self.traverse_node())
+
+    def traverse_node(self):
+        map = self
+
+        def traverse_node(node, dat):
+            # Create rooms
+            if libtcod.bsp_is_leaf(node):
+                minx = node.x + 1
+                maxx = node.x + node.w - 1
+                miny = node.y + 1
+                maxy = node.y + node.h - 1
+
+                if maxx == MAP_WIDTH - 1:
+                    maxx -= 1
+                if maxy == MAP_HEIGHT - 1:
+                    maxy -= 1
+
+                # If it's False the rooms sizes are random, else the rooms are filled to the node's size
+                if not BSP_FULL_ROOMS:
+                    minx = libtcod.random_get_int(None, minx, maxx - ROOM_MIN_SIZE + 1)
+                    miny = libtcod.random_get_int(None, miny, maxy - ROOM_MIN_SIZE + 1)
+                    maxx = libtcod.random_get_int(None, minx + ROOM_MIN_SIZE - 2, maxx)
+                    maxy = libtcod.random_get_int(None, miny + ROOM_MIN_SIZE - 2, maxy)
+
+                node.x = minx
+                node.y = miny
+                node.w = maxx - minx + 1
+                node.h = maxy - miny + 1
+
+                # Dig room
+                self.create_room(Rect(node.x, node.y, node.w, node.h))
+
+            # Create corridors
+            else:
+                left = libtcod.bsp_left(node)
+                right = libtcod.bsp_right(node)
+                node.x = min(left.x, right.x)
+                node.y = min(left.y, right.y)
+                node.w = max(left.x + left.w, right.x + right.w) - node.x
+                node.h = max(left.y + left.h, right.y + right.h) - node.y
+                if node.horizontal:
+                    if left.x + left.w - 1 < right.x or right.x + right.w - 1 < left.x:
+                        x1 = libtcod.random_get_int(None, left.x, left.x + left.w - 1)
+                        x2 = libtcod.random_get_int(None, right.x, right.x + right.w - 1)
+                        y = libtcod.random_get_int(None, left.y + left.h, right.y)
+                        map.vline_up(x1, y - 1)
+                        map.hline(x1, y, x2)
+                        map.vline_down(x2, y + 1)
+
+                    else:
+                        minx = max(left.x, right.x)
+                        maxx = min(left.x + left.w - 1, right.x + right.w - 1)
+                        x = libtcod.random_get_int(None, minx, maxx)
+                        map.vline_down(x, right.y)
+                        map.vline_up(x, right.y - 1)
+
+                else:
+                    if left.y + left.h - 1 < right.y or right.y + right.h - 1 < left.y:
+                        y1 = libtcod.random_get_int(None, left.y, left.y + left.h - 1)
+                        y2 = libtcod.random_get_int(None, right.y, right.y + right.h - 1)
+                        x = libtcod.random_get_int(None, left.x + left.w, right.x)
+                        map.hline_left(x - 1, y1)
+                        map.vline(x, y1, y2)
+                        map.hline_right(x + 1, y2)
+                    else:
+                        miny = max(left.y, right.y)
+                        maxy = min(left.y + left.h - 1, right.y + right.h - 1)
+                        y = libtcod.random_get_int(None, miny, maxy)
+                        map.hline_left(right.x - 1, y)
+                        map.hline_right(right.x, y)
+
+            return True
+        return traverse_node
 
     def populate(self):
         # Place player and boss
