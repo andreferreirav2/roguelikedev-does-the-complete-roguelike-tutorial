@@ -6,7 +6,7 @@ import entities
 
 
 class Map:
-    def __init__(self, width, height, auto_create=False):
+    def __init__(self, width, height):
         self.width = width
         self.height = height
         self.tiles = [[Tile(x, y, blocks=True) for y in range(0, self.height)] for x in range(0, self.width)]
@@ -16,8 +16,7 @@ class Map:
         self.player = None
         self.game_manager = None
 
-        if auto_create:
-            self.create_rooms()
+        self.create_rooms()
 
     def is_occupied(self, x, y):
         return self.tiles[x][y].blocks or self.get_occupier(x, y)
@@ -75,6 +74,40 @@ class Map:
                 self.create_room(new_room)
 
         self.connect_rooms()
+
+    def populate(self):
+        # Place player and boss
+        center_x1, center_y1 = self.rooms[0].center()
+        center_x2, center_y2 = self.rooms[-1].center()
+        self.add_object(entities.Object('player', center_x1, center_y1, speed=PLAYER_SPEED,
+                                            fighter=entities.Fighter(hp=30, defense=1, power=4,
+                                                                     death_function=entities.Fighter.player_death),
+                                            painter=painters.ObjectPainter(obj_type='player')), is_player=True)
+        self.add_object(entities.Object('boss', center_x2, center_y2,
+                                            fighter=entities.Fighter(hp=20, defense=3, power=4,
+                                                                     death_function=entities.Fighter.monster_death),
+                                            ai=entities.BasicMonster(),
+                                            painter=painters.ObjectPainter(obj_type='boss')))
+
+        # Place monsters
+        for room in self.rooms[1::]:
+            num_monsters = libtcod.random_get_int(0, 0, MAX_MONSTERS_PER_ROOM)
+            for i in range(num_monsters):
+                x = libtcod.random_get_int(0, room.x1 + 1, room.x2 - 1)
+                y = libtcod.random_get_int(0, room.y1 + 1, room.y2 - 1)
+
+                if libtcod.random_get_int(0, 0, 100) < 80:  # 80% chance of getting an orc
+                    self.add_object(entities.Object('orc', x, y,
+                                                        ai=entities.BasicMonster(),
+                                                        fighter=entities.Fighter(hp=5, defense=1, power=3,
+                                                                                 death_function=entities.Fighter.monster_death),
+                                                        painter=painters.ObjectPainter('orc')))
+                else:
+                    self.add_object(entities.Object('troll', x, y,
+                                                        ai=entities.BasicMonster(),
+                                                        fighter=entities.Fighter(hp=10, defense=2, power=2,
+                                                                                 death_function=entities.Fighter.monster_death),
+                                                        painter=painters.ObjectPainter('troll')))
 
     def add_object(self, obj, is_player=False):
         if self.is_occupied(obj.x, obj.y):

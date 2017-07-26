@@ -16,12 +16,12 @@ class GameManager:
         libtcod.console_init_root(SCREEN_WIDTH, SCREEN_HEIGHT, 'rl', False)
         libtcod.sys_set_fps(LIMIT_FPS)
 
-        self.map = maps.Map(MAP_WIDTH, MAP_HEIGHT, auto_create=True)
+        # Create and fill map
+        self.map = maps.Map(MAP_WIDTH, MAP_HEIGHT)
         self.map.game_manager = self
+        self.map.populate()
 
-        # Populate map
-        self.populate_map()
-
+        # Visibility
         self.fov_map = libtcod.map_new(MAP_WIDTH, MAP_HEIGHT)
         for y in range(MAP_HEIGHT):
             for x in range(MAP_WIDTH):
@@ -29,6 +29,7 @@ class GameManager:
         self.fov_recompute = True
         self.recalculate_visibility()
 
+        # Lower screen message queue
         self.messages = []
         self.add_message("Be careful, it's dangerous out there!", libtcod.red)
 
@@ -38,36 +39,6 @@ class GameManager:
 
         # Game State
         self.game_state = STATE_PLAYING
-
-    def populate_map(self):
-        # Place player and boss
-        center_x1, center_y1 = self.map.rooms[0].center()
-        center_x2, center_y2 = self.map.rooms[-1].center()
-        self.map.add_object(entities.Object('player', center_x1, center_y1, speed=PLAYER_SPEED,
-                                            fighter=entities.Fighter(hp=30, defense=1, power=4, death_function=entities.Fighter.player_death),
-                                            painter=painters.ObjectPainter(obj_type='player')), is_player=True)
-        self.map.add_object(entities.Object('boss', center_x2, center_y2,
-                                            fighter=entities.Fighter(hp=20, defense=3, power=4, death_function=entities.Fighter.monster_death),
-                                            ai=entities.BasicMonster(),
-                                            painter=painters.ObjectPainter(obj_type='boss')))
-
-        # Place monsters
-        for room in self.map.rooms[1::]:
-            num_monsters = libtcod.random_get_int(0, 0, MAX_MONSTERS_PER_ROOM)
-            for i in range(num_monsters):
-                x = libtcod.random_get_int(0, room.x1 + 1, room.x2 - 1)
-                y = libtcod.random_get_int(0, room.y1 + 1, room.y2 - 1)
-
-                if libtcod.random_get_int(0, 0, 100) < 80:  # 80% chance of getting an orc
-                    self.map.add_object(entities.Object('orc', x, y,
-                                                        ai=entities.BasicMonster(),
-                                                        fighter=entities.Fighter(hp=5, defense=1, power=3, death_function=entities.Fighter.monster_death),
-                                                        painter=painters.ObjectPainter('orc')))
-                else:
-                    self.map.add_object(entities.Object('troll', x, y,
-                                                        ai=entities.BasicMonster(),
-                                                        fighter=entities.Fighter(hp=10, defense=2, power=2, death_function=entities.Fighter.monster_death),
-                                                        painter=painters.ObjectPainter('troll')))
 
     def recalculate_visibility(self):
         if self.fov_recompute:
