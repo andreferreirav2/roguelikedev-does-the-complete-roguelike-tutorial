@@ -16,7 +16,10 @@ python rl.py
 
 ## Screenshots
 
+### Extra - BSP procedurally generated map
+![BSP](screens/screen_9_bsp_map.png?raw=true "Dungeon Revamp")
 ### Week 5 - AI / Untimely deaths / GUI
+![Mouse](screens/screen_8_mouse_inspect.png?raw=true "What is that over there?")
 ![Deaths](screens/screen_7_hp_messages.png?raw=true "GUI and messages.")
 ![Deaths](screens/screen_6_deaths.png?raw=true "Die! DIE!!!!")
 ### Week 4 - Field of View and Exploration / Preparing for combat
