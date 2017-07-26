@@ -26,6 +26,7 @@ class GameManager:
         for y in range(MAP_HEIGHT):
             for x in range(MAP_WIDTH):
                 libtcod.map_set_properties(self.fov_map, x, y, not self.map.tiles[x][y].block_sight, self.map.tiles[x][y].blocks)
+        self.fov_recompute = True
         self.recalculate_visibility()
 
         self.messages = []
@@ -69,7 +70,9 @@ class GameManager:
                                                         painter=painters.ObjectPainter('troll')))
 
     def recalculate_visibility(self):
-        libtcod.map_compute_fov(self.fov_map, self.map.player.x, self.map.player.y, TORCH_RADIUS, FOV_LIGHT_WALLS, FOV_ALG)
+        if self.fov_recompute:
+            libtcod.map_compute_fov(self.fov_map, self.map.player.x, self.map.player.y, TORCH_RADIUS, FOV_LIGHT_WALLS, FOV_ALG)
+            self.fov_recompute = False
 
     def calculate_visibility(self, obj):
         is_visible = libtcod.map_is_in_fov(self.fov_map, obj.x, obj.y)
@@ -136,8 +139,13 @@ class GameManager:
 
     def run(self):
         while not libtcod.console_is_window_closed():
+            # Key and mouse handler
             libtcod.sys_check_for_event(libtcod.EVENT_KEY_PRESS|libtcod.EVENT_MOUSE, self.key, self.mouse)
             action = self.handle_keys()
+            if action == ACTION_EXIT:
+                break
+            if action == ACTION_MOVE:
+                self.fov_recompute = True
 
             # Calculate visibility for tiles and objects
             self.recalculate_visibility()
@@ -153,9 +161,6 @@ class GameManager:
                     obj.wait -= 1
                     if obj.ai:
                         obj.ai.take_turn()
-
-            if action == ACTION_EXIT:
-                break
 
             self.painter.draw()
 

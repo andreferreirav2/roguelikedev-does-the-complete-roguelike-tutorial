@@ -37,19 +37,17 @@ class GamePainter:
             y = MAP_HEIGHT - CAMERA_HEIGHT - 1
 
         if x != self.camera_x_offset or y != self.camera_y_offset:
-            print (x, y)
-            self.owner.recalculate_visibility()
             (self.camera_x_offset, self.camera_y_offset) = (x, y)
 
     def draw(self):
-        libtcod.console_set_default_background(self.con, libtcod.black)
+        libtcod.console_clear(self.con)
 
         self.center_camera(self.owner.map.player.x, self.owner.map.player.y)
 
         # Draw map
         for camera_x in range(CAMERA_WIDTH):
             for camera_y in range(CAMERA_HEIGHT):
-                (map_x, map_y) = (self.camera_x_offset + camera_x, self.camera_y_offset + camera_y)
+                map_x, map_y = self.camera_to_map_coordinates(camera_x, camera_y)
                 self.owner.map.tiles[map_x][map_y].painter.draw(self.con, camera_x, camera_y)
 
         # Draw objects
