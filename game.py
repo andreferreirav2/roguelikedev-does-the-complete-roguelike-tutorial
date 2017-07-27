@@ -98,12 +98,11 @@ class GameManager:
         return action
 
     def get_element_under_mouse(self):
-        (x, y) = self.mouse.cx, self.mouse.cy
+        (x, y) = self.painter.camera_to_map_coordinates(self.mouse.cx - CAMERA_X, self.mouse.cy - CAMERA_Y)
 
         elements = [obj.name for obj in self.map.objects[::-1] if obj.visible and obj.x == x and obj.y == y]
 
-        if x >= 0 and x < MAP_WIDTH and y >= 0 and y < MAP_HEIGHT and \
-                self.map.tiles[x][y].visible and self.map.tiles[x][y].blocks:
+        if 0 <= x < MAP_WIDTH and 0 <= y < MAP_HEIGHT and self.map.tiles[x][y].visible and self.map.tiles[x][y].blocks:
             elements.append("wall")
 
         return ", ".join(elements).capitalize()
