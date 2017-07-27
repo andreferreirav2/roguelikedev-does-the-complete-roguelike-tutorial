@@ -11,7 +11,7 @@ class Object:
         self.y = y
         self.blocks = blocks
         self.is_player = False
-        self.seen = True
+        self.seen = False
         self.visible = False
         self.speed = speed
         self.wait = libtcod.random_get_int(0, 0, speed)

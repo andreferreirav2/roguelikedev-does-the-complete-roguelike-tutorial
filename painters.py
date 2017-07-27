@@ -6,12 +6,13 @@ class GamePainter:
     def __init__(self, owner=None):
         self.owner = owner
         self.con = libtcod.console_new(MAP_WIDTH, MAP_HEIGHT)
-        self.panel = libtcod.console_new(SCREEN_WIDTH, PANEL_HEIGHT)
+        self.panel = libtcod.console_new(PANEL_WIDTH, PANEL_HEIGHT)
+        self.gui = libtcod.console_new(SCREEN_WIDTH, SCREEN_HEIGHT)
 
         self.camera_x_offset, self.camera_y_offset = 0, 0
 
     def map_to_camera_coordinates(self, map_x, map_y):
-        (x, y) = (map_x - self.camera_x_offset, map_y - self.camera_y_offset)
+        x, y = (map_x - self.camera_x_offset, map_y - self.camera_y_offset)
 
         if x < 0 or y < 0 or x >= CAMERA_WIDTH or y >= CAMERA_HEIGHT:
             return None, None  # if it's outside the view, return nothing
@@ -19,25 +20,34 @@ class GamePainter:
         return x, y
 
     def camera_to_map_coordinates(self, camera_x, camera_y):
-        return camera_x + self.camera_x_offset, camera_y + self.camera_y_offset
+        map_x, map_y = camera_x + self.camera_x_offset, camera_y + self.camera_y_offset
+
+        if map_x < 0 or map_y < 0 or map_x >= MAP_WIDTH or map_y >= MAP_HEIGHT:
+            return None, None  # if it's outside the map, return nothing
+
+        return map_x, map_y
 
     def center_camera(self, map_x, map_y):
-        # new camera coordinates (top-left corner of the screen relative to the map)
-        x = map_x - CAMERA_WIDTH / 2  # coordinates so that the target is at the center of the screen
-        y = map_y - CAMERA_HEIGHT / 2
+        if MAP_WIDTH > CAMERA_WIDTH:
+            camera_x_offset = map_x - CAMERA_WIDTH / 2
+            if camera_x_offset < 0:
+                camera_x_offset = 0
+            if camera_x_offset + CAMERA_WIDTH > MAP_WIDTH - 1:
+                camera_x_offset = MAP_WIDTH - CAMERA_WIDTH - 1
+        else:
+            camera_x_offset = 0
 
-        # make sure the camera doesn't see outside the map
-        if x < 0:
-            x = 0
-        if y < 0:
-            y = 0
-        if x > MAP_WIDTH - CAMERA_WIDTH - 1:
-            x = MAP_WIDTH - CAMERA_WIDTH - 1
-        if y > MAP_HEIGHT - CAMERA_HEIGHT - 1:
-            y = MAP_HEIGHT - CAMERA_HEIGHT - 1
+        if MAP_HEIGHT > CAMERA_HEIGHT:
+            camera_y_offset = map_y - CAMERA_HEIGHT / 2
+            if camera_y_offset < 0:
+                camera_y_offset = 0
+            if camera_y_offset + CAMERA_HEIGHT > MAP_HEIGHT - 1:
+                camera_y_offset = MAP_HEIGHT - CAMERA_HEIGHT - 1
+        else:
+            camera_y_offset = 0
 
-        if x != self.camera_x_offset or y != self.camera_y_offset:
-            (self.camera_x_offset, self.camera_y_offset) = (x, y)
+        if camera_x_offset != self.camera_x_offset or camera_y_offset != self.camera_y_offset:
+            (self.camera_x_offset, self.camera_y_offset) = (camera_x_offset, camera_y_offset)
 
     def draw(self):
         libtcod.console_clear(self.con)
@@ -48,7 +58,8 @@ class GamePainter:
         for camera_x in range(CAMERA_WIDTH):
             for camera_y in range(CAMERA_HEIGHT):
                 map_x, map_y = self.camera_to_map_coordinates(camera_x, camera_y)
-                self.owner.map.tiles[map_x][map_y].painter.draw(self.con, camera_x, camera_y)
+                if map_x is not None and map_y is not None:
+                    self.owner.map.tiles[map_x][map_y].painter.draw(self.con, camera_x, camera_y)
 
         # Draw objects
         for obj in self.owner.map.objects:
@@ -61,6 +72,11 @@ class GamePainter:
         self.draw_bar(1, 1, BAR_WIDTH, 'HP', self.owner.map.player.fighter.hp, self.owner.map.player.fighter.max_hp, libtcod.red, libtcod.darker_red)
         self.draw_bar(1, 3, BAR_WIDTH, 'MP', self.owner.map.player.fighter.hp, self.owner.map.player.fighter.max_hp, libtcod.blue, libtcod.darker_blue)
 
+        # Draw margins
+        libtcod.console_set_default_foreground(self.gui, libtcod.dark_amber)
+        self.draw_outine_box(CAMERA_X - 1, CAMERA_Y - 1, CAMERA_WIDTH + 2, CAMERA_HEIGHT + 2)
+        self.draw_outine_box(PANEL_X - 1, PANEL_Y - 1, PANEL_WIDTH + 2, PANEL_HEIGHT + 2)
+
         # Draw what is under the cursor
         libtcod.console_set_default_foreground(self.panel, libtcod.light_gray)
         libtcod.console_print_ex(self.panel, 1, 0, libtcod.BKGND_NONE, libtcod.LEFT, self.owner.get_element_under_mouse())
@@ -68,12 +84,25 @@ class GamePainter:
         # Draw the messages
         for (y, (line, color)) in enumerate(self.owner.messages):
             libtcod.console_set_default_foreground(self.panel, color)
-            libtcod.console_print_ex(self.panel, MSG_X, y + 1, libtcod.BKGND_NONE, libtcod.LEFT, line)
+            libtcod.console_print_ex(self.panel, MSG_X, y, libtcod.BKGND_NONE, libtcod.LEFT, line)
 
         # Flush alternatives to default console
-        libtcod.console_blit(self.con, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 0, 0)
-        libtcod.console_blit(self.panel, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 0, PANEL_Y)
+        libtcod.console_blit(self.gui, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 0, 0)
+        libtcod.console_blit(self.con, 0, 0, CAMERA_WIDTH, CAMERA_HEIGHT, 0, CAMERA_X, CAMERA_Y)
+        libtcod.console_blit(self.panel, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, PANEL_X, PANEL_Y)
         libtcod.console_flush()
+
+    def draw_outine_box(self, x, y, width, height):
+        for dx in range(x, x + width):
+            libtcod.console_put_char(self.gui, dx, y, libtcod.CHAR_HLINE, libtcod.BKGND_NONE)
+            libtcod.console_put_char(self.gui, dx, y + height - 1, libtcod.CHAR_HLINE, libtcod.BKGND_NONE)
+        for dy in range(y, y + height):
+            libtcod.console_put_char(self.gui, x, dy, libtcod.CHAR_VLINE, libtcod.BKGND_NONE)
+            libtcod.console_put_char(self.gui, x + width - 1, dy, libtcod.CHAR_VLINE, libtcod.BKGND_NONE)
+        libtcod.console_put_char(self.gui, x, y, libtcod.CHAR_NW, libtcod.BKGND_NONE)
+        libtcod.console_put_char(self.gui, x, y + height - 1, libtcod.CHAR_SW, libtcod.BKGND_NONE)
+        libtcod.console_put_char(self.gui, x + width - 1, y, libtcod.CHAR_NE, libtcod.BKGND_NONE)
+        libtcod.console_put_char(self.gui, x + width - 1, y + height - 1, libtcod.CHAR_SE, libtcod.BKGND_NONE)
 
     def draw_bar(self, x, y, total_width, name, value, maximum, bar_color, back_color):
         bar_width = int(float(value) / maximum * total_width)

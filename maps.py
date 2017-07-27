@@ -34,8 +34,8 @@ class Map:
         self.tiles[x][y].block_sight = False
 
     def create_room(self, rect):
-        for x in range(rect.x1 + 1, rect.x2):
-            for y in range(rect.y1 + 1, rect.y2):
+        for x in range(rect.x1 + 1, rect.x2 - 1):
+            for y in range(rect.y1 + 1, rect.y2 - 1):
                 self.clear_tile(x, y)
 
         self.rooms.append(rect)
@@ -122,18 +122,18 @@ class Map:
     def traverse_node(self):
         map = self
 
-        def traverse_node(node, dat):
+        def traverse_node(node, _):
             # Create rooms
             if libtcod.bsp_is_leaf(node):
-                minx = node.x + 1
+                minx = node.x
                 maxx = node.x + node.w - 1
-                miny = node.y + 1
+                miny = node.y
                 maxy = node.y + node.h - 1
 
-                if maxx == MAP_WIDTH - 1:
-                    maxx -= 1
-                if maxy == MAP_HEIGHT - 1:
-                    maxy -= 1
+                if maxx >= MAP_WIDTH:
+                    maxx = MAP_WIDTH - 1
+                if maxy >= MAP_HEIGHT:
+                    maxy = MAP_HEIGHT - 1
 
                 # If it's False the rooms sizes are random, else the rooms are filled to the node's size
                 if not BSP_FULL_ROOMS:
@@ -151,7 +151,7 @@ class Map:
                 self.create_room(Rect(node.x, node.y, node.w, node.h))
 
             # Create corridors
-            else:
+            elif DIG_CORRIDORS:
                 left = libtcod.bsp_left(node)
                 right = libtcod.bsp_right(node)
                 node.x = min(left.x, right.x)
@@ -249,7 +249,7 @@ class Tile:
         self.x = x
         self.y = y
         self.blocks = blocks
-        self.seen = False
+        self.seen = not FOG_OF_WAR
         self.visible = False
         if block_sight is None:
             block_sight = blocks
