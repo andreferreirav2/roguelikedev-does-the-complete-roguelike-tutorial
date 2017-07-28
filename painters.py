@@ -5,7 +5,7 @@ from consts import *
 class GamePainter:
     def __init__(self, owner=None):
         self.owner = owner
-        self.con = libtcod.console_new(MAP_WIDTH, MAP_HEIGHT)
+        self.con = libtcod.console_new(SCREEN_WIDTH, SCREEN_HEIGHT)
         self.panel = libtcod.console_new(PANEL_WIDTH, PANEL_HEIGHT)
         self.gui = libtcod.console_new(SCREEN_WIDTH, SCREEN_HEIGHT)
 
@@ -30,21 +30,21 @@ class GamePainter:
     def center_camera(self, map_x, map_y):
         if MAP_WIDTH > CAMERA_WIDTH:
             camera_x_offset = map_x - CAMERA_WIDTH / 2
-            if camera_x_offset < 0:
-                camera_x_offset = 0
-            if camera_x_offset + CAMERA_WIDTH > MAP_WIDTH - 1:
-                camera_x_offset = MAP_WIDTH - CAMERA_WIDTH - 1
+            if camera_x_offset < - CAMERA_PADDING:
+                camera_x_offset = - CAMERA_PADDING
+            if camera_x_offset + CAMERA_WIDTH > MAP_WIDTH - 1 + CAMERA_PADDING:
+                camera_x_offset = MAP_WIDTH - CAMERA_WIDTH - 1 + CAMERA_PADDING
         else:
-            camera_x_offset = 0
+            camera_x_offset = - (CAMERA_WIDTH - MAP_WIDTH) / 2
 
         if MAP_HEIGHT > CAMERA_HEIGHT:
             camera_y_offset = map_y - CAMERA_HEIGHT / 2
-            if camera_y_offset < 0:
-                camera_y_offset = 0
-            if camera_y_offset + CAMERA_HEIGHT > MAP_HEIGHT - 1:
-                camera_y_offset = MAP_HEIGHT - CAMERA_HEIGHT - 1
+            if camera_y_offset < - CAMERA_PADDING:
+                camera_y_offset = - CAMERA_PADDING
+            if camera_y_offset + CAMERA_HEIGHT > MAP_HEIGHT - 1 + CAMERA_PADDING:
+                camera_y_offset = MAP_HEIGHT - CAMERA_HEIGHT - 1 + CAMERA_PADDING
         else:
-            camera_y_offset = 0
+            camera_y_offset = - (CAMERA_HEIGHT - MAP_HEIGHT) / 2
 
         if camera_x_offset != self.camera_x_offset or camera_y_offset != self.camera_y_offset:
             (self.camera_x_offset, self.camera_y_offset) = (camera_x_offset, camera_y_offset)

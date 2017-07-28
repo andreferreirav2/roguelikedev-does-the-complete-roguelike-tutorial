@@ -34,47 +34,11 @@ class Map:
         self.tiles[x][y].block_sight = False
 
     def create_room(self, rect):
-        for x in range(rect.x1 + 1, rect.x2 - 1):
-            for y in range(rect.y1 + 1, rect.y2 - 1):
+        for x in range(rect.x1, rect.x2):
+            for y in range(rect.y1, rect.y2):
                 self.clear_tile(x, y)
 
         self.rooms.append(rect)
-
-    def connect_rooms(self):
-        for i in range(0, len(self.rooms) - 1):
-            room_x, room_y = self.rooms[i].center()
-            next_x, next_y = self.rooms[i + 1].center()
-
-            if libtcod.random_get_int(0, 0, 1) == 1:
-                self.create_h_tunnel(room_x, next_x, room_y)
-                self.create_v_tunnel(next_x, room_y, next_y)
-            else:
-                self.create_v_tunnel(room_x, next_y, room_y)
-                self.create_h_tunnel(next_x, room_x, next_y)
-
-    def create_h_tunnel(self, x1, x2, y):
-        for x in range(min(x1, x2), max(x1, x2) + 1):
-            self.clear_tile(x, y)
-
-    def create_v_tunnel(self, x, y1, y2):
-        for y in range(min(y1, y2), max(y1, y2) + 1):
-            self.clear_tile(x, y)
-
-    def create_rooms(self):
-        for i in range(MAX_ROOMS):
-            # random width and height
-            width = libtcod.random_get_int(0, ROOM_MIN_SIZE, ROOM_MAX_SIZE)
-            height = libtcod.random_get_int(0, ROOM_MIN_SIZE, ROOM_MAX_SIZE)
-
-            # random position without going out of the boundaries of the map
-            x = libtcod.random_get_int(0, 0, MAP_WIDTH - width - 1)
-            y = libtcod.random_get_int(0, 0, MAP_HEIGHT - height - 1)
-
-            new_room = Rect(x, y, width, height)
-            if len([True for room in self.rooms if new_room.intersects(room)]) == 0:
-                self.create_room(new_room)
-
-        self.connect_rooms()
 
     def vline(self, x, y1, y2):
         if y1 > y2:
@@ -125,15 +89,15 @@ class Map:
         def traverse_node(node, _):
             # Create rooms
             if libtcod.bsp_is_leaf(node):
-                minx = node.x
+                minx = node.x + 1
                 maxx = node.x + node.w - 1
-                miny = node.y
+                miny = node.y + 1
                 maxy = node.y + node.h - 1
 
-                if maxx >= MAP_WIDTH:
-                    maxx = MAP_WIDTH - 1
-                if maxy >= MAP_HEIGHT:
-                    maxy = MAP_HEIGHT - 1
+                if maxx == MAP_WIDTH:
+                    maxx -= 1
+                if maxy == MAP_HEIGHT:
+                    maxy -= 1
 
                 # If it's False the rooms sizes are random, else the rooms are filled to the node's size
                 if not BSP_FULL_ROOMS:
@@ -144,8 +108,8 @@ class Map:
 
                 node.x = minx
                 node.y = miny
-                node.w = maxx - minx + 1
-                node.h = maxy - miny + 1
+                node.w = maxx - minx
+                node.h = maxy - miny
 
                 # Dig room
                 self.create_room(Rect(node.x, node.y, node.w, node.h))
@@ -159,7 +123,7 @@ class Map:
                 node.w = max(left.x + left.w, right.x + right.w) - node.x
                 node.h = max(left.y + left.h, right.y + right.h) - node.y
                 if node.horizontal:
-                    if left.x + left.w - 1 < right.x or right.x + right.w - 1 < left.x:
+                    if left.x + left.w - 1 < right.x or right.x + right.w - 1 < left.x:  # No overlap
                         x1 = libtcod.random_get_int(None, left.x, left.x + left.w - 1)
                         x2 = libtcod.random_get_int(None, right.x, right.x + right.w - 1)
                         y = libtcod.random_get_int(None, left.y + left.h, right.y)
@@ -167,7 +131,7 @@ class Map:
                         map.hline(x1, y, x2)
                         map.vline_down(x2, y + 1)
 
-                    else:
+                    else:  # Overlap
                         minx = max(left.x, right.x)
                         maxx = min(left.x + left.w - 1, right.x + right.w - 1)
                         x = libtcod.random_get_int(None, minx, maxx)
@@ -175,14 +139,14 @@ class Map:
                         map.vline_up(x, right.y - 1)
 
                 else:
-                    if left.y + left.h - 1 < right.y or right.y + right.h - 1 < left.y:
+                    if left.y + left.h - 1 < right.y or right.y + right.h - 1 < left.y:  # No overlap
                         y1 = libtcod.random_get_int(None, left.y, left.y + left.h - 1)
                         y2 = libtcod.random_get_int(None, right.y, right.y + right.h - 1)
                         x = libtcod.random_get_int(None, left.x + left.w, right.x)
                         map.hline_left(x - 1, y1)
                         map.vline(x, y1, y2)
                         map.hline_right(x + 1, y2)
-                    else:
+                    else:  # Overlap
                         miny = max(left.y, right.y)
                         maxy = min(left.y + left.h - 1, right.y + right.h - 1)
                         y = libtcod.random_get_int(None, miny, maxy)
